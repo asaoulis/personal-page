@@ -368,15 +368,27 @@ Repo + tooling, design system, content pages, `/demo` preview, this doc, Vercel 
    (`events.json` + per-event ensembles) with a deterministic **mock** posterior. GitHub Actions cron
    (`.github/workflows/update-events.yml`) publishes to the orphan `data` branch. The frontend renders
    the **lune (SVG) + beachball (canvas) client-side** from the JSON (no PNGs). Pytest-covered.
-2. **M-D2 Inference — 🔭.** F-net **fetch via HinetPy (code `0103`)** + build/cache **`win32tools`**
-   for WIN32 → SAC; **load model + GF DB once per run**, run `seismo_sbi` inference (~seconds/event),
+2. **M-Data — F-net station/data sourcing — 🔭 (scoped).** Build the target station list = the
+   **F-net broadband stations NIED routinely uses for MT** (reliability-first, well-distributed —
+   _not_ IRIS-convenient ones), fetch a month of data, and attach **multiple** reference MTs/event
+   (F-net MT + GCMT + USGS → contract `reference` → `references[]`, multi-marker lune + multiple
+   beachballs). **Primary path: F-net via HinetPy** (user has the account; `win32tools` for WIN32→SAC)
+   — IRIS FDSN is a fallback only (it does **not** serve F-net). Repo preprocessing/QA/h5 reused
+   unchanged. Full plan + empirical findings: **`worker/docs/DATA_SCOPING.md`**.
+3. **M-D0a — Japan 1-D model ensemble + GF databases — 🔭 (prerequisite).** Build perturbed 1-D
+   Japan Earth models and AxiSEM→Instaseis Green's-function DBs **for the chosen F-net geometry**
+   (reuse `scripts/axisem/`). Blocked on the M-Data station list (GF DBs are per-receiver-geometry).
+4. **M-D0b — NPE training — 🔭 (prerequisite).** Train the F-net neural posterior estimator on the
+   GF-simulated dataset for that geometry (reuse `train_NPE.py` + the cluster) → the checkpoint M-D2
+   loads.
+5. **M-D2 Inference — 🔭.** With the trained checkpoint + GF DB: F-net **fetch via HinetPy (code
+   `0103`)**, **load model + GF DB once per run**, run `seismo_sbi` inference (~seconds/event),
    emit real `(γ, δ)` ensembles — swap `inference.real_posterior` in, output shape unchanged.
-3. **M-D3 Catalogue comparison — 🔭.** Pull reference MTs (F-net routine / AQUA / GCMT via
-   `obspy.io.nied.fnetmt`); compute the Kagan angle and overlay catalogue vs model on the lune.
-   Label Mw 3.5–3.8 as best-effort (regional-MT floor).
-4. **M-D4 Robustness — 🔭.** Wire the M3.5–4.5 low-band trigger (JMA/AQUA), auth-refresh + failure
-   alerting, NIED/F-net + tile attributions in the demo footer, re-measured `archive_lag`.
-5. **M-D5 Richer interactions — 🔭.** Hover a posterior sample, KDE-contour shading on the lune,
+6. **M-D3 Catalogue comparison — 🔭.** Compute Kagan angle vs each reference MT; overlay all on the
+   lune. Label Mw 3.5–3.8 as best-effort (regional-MT floor).
+7. **M-D4 Robustness — 🔭.** M3.5–4.5 low-band trigger (JMA/AQUA), auth-refresh + failure alerting,
+   NIED/F-net + tile attributions in the footer, re-measured `archive_lag`.
+8. **M-D5 Richer interactions — 🔭.** Hover a posterior sample, KDE-contour shading on the lune,
    click-through to the per-event record. (Client-side rendering itself shipped in M-D1.)
 
 ### Other project pages — 🔭
