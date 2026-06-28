@@ -1,15 +1,18 @@
 import { useMemo } from 'react';
+import { type Reference, referenceMarker } from './types';
+import { MarkerShape, referenceColor } from './markers';
 
 /**
- * Source-type lune rendered client-side (SVG) from a (gamma, delta) posterior
- * ensemble — Hammer equal-area projection, same as the research code. Far smaller
- * than a PNG and themeable / interactive.
+ * Source-type lune rendered client-side (SVG) from a (gamma, delta) posterior ensemble —
+ * Hammer equal-area projection, same as the research code. Each catalogue reference is scattered
+ * at its own (γ, δ) with a distinct marker (star/square/triangle/diamond per source); the model
+ * posterior mean is the ringed accent dot.
  */
 interface Props {
   gamma: number[];
   delta: number[];
   mean: { gamma: number; delta: number };
-  reference: { gamma: number; delta: number };
+  references: Reference[];
   accent?: string;
 }
 
@@ -28,7 +31,7 @@ function polyline(pts: [number, number][]): string {
 
 const MERIDIANS = [-30, -15, 0, 15, 30];
 const PARALLELS = [-90, -60, -30, 0, 30, 60, 90];
-const REFS: {
+const ANCHORS: {
   label: string;
   g: number;
   d: number;
@@ -42,7 +45,7 @@ const REFS: {
   { label: '−CLVD', g: -30, d: 0, anchor: 'end', dy: 0.03 },
 ];
 
-export default function Lune({ gamma, delta, mean, reference, accent = '#2547ad' }: Props) {
+export default function Lune({ gamma, delta, mean, references, accent = '#2547ad' }: Props) {
   const geom = useMemo(() => {
     const grid = [
       ...MERIDIANS.map((g) =>
@@ -60,7 +63,6 @@ export default function Lune({ gamma, delta, mean, reference, accent = '#2547ad'
   }, [gamma, delta]);
 
   const [mx, my] = hammer(mean.gamma, mean.delta);
-  const [rx, ry] = hammer(reference.gamma, reference.delta);
 
   return (
     <svg
@@ -85,17 +87,17 @@ export default function Lune({ gamma, delta, mean, reference, accent = '#2547ad'
         <circle key={i} cx={p[0]} cy={p[1]} r={0.022} fill={accent} fillOpacity={0.16} />
       ))}
 
-      {/* reference source-type markers */}
-      {REFS.map((r) => {
+      {/* source-type anchors */}
+      {ANCHORS.map((r) => {
         const [x, y] = hammer(r.g, r.d);
         return (
           <g key={r.label}>
-            <circle cx={x} cy={y} r={0.018} fill="#4d5564" />
+            <circle cx={x} cy={y} r={0.015} fill="#9aa1ad" />
             <text
               x={x}
               y={y + r.dy}
-              fontSize={0.085}
-              fill="#4d5564"
+              fontSize={0.08}
+              fill="#6a7280"
               textAnchor={r.anchor}
               dominantBaseline="middle"
             >
@@ -105,17 +107,23 @@ export default function Lune({ gamma, delta, mean, reference, accent = '#2547ad'
         );
       })}
 
-      {/* catalogue reference (star) */}
-      <text
-        x={rx}
-        y={ry}
-        fontSize={0.2}
-        fill="#d4501e"
-        textAnchor="middle"
-        dominantBaseline="central"
-      >
-        ★
-      </text>
+      {/* catalogue references — distinct marker per source */}
+      {references.map((ref, i) => {
+        const [x, y] = hammer(ref.gamma, ref.delta);
+        return (
+          <MarkerShape
+            key={`${ref.source}-${i}`}
+            shape={referenceMarker(ref.source)}
+            cx={x}
+            cy={y}
+            r={0.07}
+            color={referenceColor(ref.source)}
+            stroke="#ffffff"
+            strokeWidth={0.014}
+          />
+        );
+      })}
+
       {/* posterior mean */}
       <circle cx={mx} cy={my} r={0.05} fill={accent} stroke="#ffffff" strokeWidth={0.018} />
     </svg>

@@ -1,13 +1,24 @@
-"""The v2 data contract — compact JSON the frontend renders client-side.
+"""The v3 data contract — compact JSON the frontend renders client-side.
 
   events.json            GeoJSON FeatureCollection index (one summary Feature/event,
                          with `properties.ensemble` pointing at the per-event file).
-  events/<id>.json       full per-event record: the (gamma, delta) posterior ensemble,
-                         strike/dip/rake (drives the canvas beachball), and the catalogue
-                         reference solution. NO rendered images — the browser draws them.
+                         Carries explicit `window_start`/`window_end` (the slider bounds
+                         come from the DATA, not wall-clock `now`).
+  events/<id>.json       full per-event record: the (gamma, delta) posterior cloud AND a
+                         downsampled `posterior.mt6` ensemble (drives the client-rendered
+                         FUZZY beachball), plus `references[]` — every catalogue solution
+                         that resolved the event (GCMT / USGS / F-net / synthetic), each
+                         with its own (gamma, delta), strike/dip/rake, mt6 and Kagan angle
+                         to the model. NO rendered images — the browser draws everything.
 
-`validate_index` / `validate_event` are the schema gate (used by tests + the worker
-before writing). Keep them in lockstep with the frontend's TypeScript types.
+`validate_index` / `validate_event` are the schema gate (used by tests + the worker before
+writing). Keep them in lockstep with the frontend's TypeScript types (`types.ts`).
+
+Schema history: v2 = single `reference` + (gamma, delta) cloud. v3 = `references[]` (multi-
+reference, primary first) + `posterior.mt6` ensemble + index `window_start`/`window_end` +
+`primary_source`/`primary_kagan_deg`/`n_references`. This module stays PURE (json/stdlib only)
+so the legacy pure-python worker + its tests run anywhere; the science-heavy generator lives in
+separate modules under the `seismo-sbi` conda env.
 """
 
 from __future__ import annotations
@@ -16,16 +27,29 @@ import glob
 import json
 import os
 from datetime import timedelta
-from typing import List
+from typing import List, Optional
 
 from .catalogue import QuakeEvent
 from .config import Config
 from .util import from_iso, to_iso
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
-def build_event_record(ev: QuakeEvent, post: dict, generated_iso: str, mock: bool) -> dict:
+def build_event_record(
+    ev: QuakeEvent,
+    post: dict,
+    generated_iso: str,
+    mock: bool,
+    model: Optional[str] = None,
+) -> dict:
+    """Assemble a schema-3 per-event record from an event + an inference `post` dict.
+
+    `post` must provide: strike/dip/rake (model best/mean SDR — drives the marker), source_type,
+    gamma_mean/delta_mean, optional `mw`, `posterior` ({gamma, delta, mt6}) and `references`
+    (non-empty list, primary first; each {source, gamma, delta, strike, dip, rake, mt6, kagan_deg,
+    optional mw}).
+    """
     return {
         "schema": SCHEMA_VERSION,
         "id": ev.id,
@@ -40,19 +64,22 @@ def build_event_record(ev: QuakeEvent, post: dict, generated_iso: str, mock: boo
         "strike": post["strike"],
         "dip": post["dip"],
         "rake": post["rake"],
+        "mw": post.get("mw"),
         "posterior": post["posterior"],
         "summary": {"gamma": post["gamma_mean"], "delta": post["delta_mean"]},
-        "reference": post["reference"],
+        "references": post["references"],
         "provenance": {
             "generated": generated_iso,
             "mock": mock,
-            "model": "mock-skeleton" if mock else "seismo_sbi-npe",
+            "model": model or ("mock-skeleton" if mock else "seismo_sbi-npe"),
         },
     }
 
 
 def index_feature(rec: dict) -> dict:
     """Compact summary Feature for the map + slider (no ensemble inline)."""
+    refs = rec.get("references") or []
+    primary = refs[0] if refs else {}
     return {
         "type": "Feature",
         "geometry": {"type": "Point", "coordinates": [rec["lon"], rec["lat"]]},
@@ -69,8 +96,10 @@ def index_feature(rec: dict) -> dict:
             "strike": rec["strike"],
             "dip": rec["dip"],
             "rake": rec["rake"],
-            "kagan_deg": rec["reference"]["kagan_deg"],
-            "catalogue_source": rec["reference"]["source"],
+            "mw": rec.get("mw"),
+            "primary_source": primary.get("source", "—"),
+            "primary_kagan_deg": primary.get("kagan_deg"),
+            "n_references": len(refs),
             "ensemble": f"events/{rec['id']}.json",
         },
     }
@@ -85,9 +114,24 @@ def write_event(out_dir: str, rec: dict) -> str:
     return path
 
 
+def _index_envelope(generated_iso, window_start, window_end, cfg, mock, feats):
+    return {
+        "type": "FeatureCollection",
+        "schema": SCHEMA_VERSION,
+        "generated": generated_iso,
+        "window_days": cfg.window_days,
+        "window_start": window_start,
+        "window_end": window_end,
+        "region": cfg.region_name,
+        "mock": mock,
+        "features": feats,
+    }
+
+
 def rebuild_index(out_dir: str, cfg: Config, now, mock: bool) -> dict:
-    """Read all per-event records, PRUNE those older than the window (deleting their
-    files), and build the index FeatureCollection sorted newest-first."""
+    """LIVE path: read all per-event records, PRUNE those older than the window (deleting their
+    files), and build the index FeatureCollection sorted newest-first. The slider window is the
+    rolling `[now - window_days, now]`."""
     cutoff_old = now - timedelta(days=cfg.window_days)
     recs: List[dict] = []
     for path in glob.glob(os.path.join(out_dir, "events", "*.json")):
@@ -98,15 +142,22 @@ def rebuild_index(out_dir: str, cfg: Config, now, mock: bool) -> dict:
             continue
         recs.append(rec)
     recs.sort(key=lambda r: r["time"], reverse=True)
-    return {
-        "type": "FeatureCollection",
-        "schema": SCHEMA_VERSION,
-        "generated": to_iso(now),
-        "window_days": cfg.window_days,
-        "region": cfg.region_name,
-        "mock": mock,
-        "features": [index_feature(r) for r in recs],
-    }
+    return _index_envelope(
+        to_iso(now), to_iso(cutoff_old), to_iso(now), cfg, mock, [index_feature(r) for r in recs]
+    )
+
+
+def build_static_index(records: List[dict], generated_iso: str, cfg: Config, mock: bool = True) -> dict:
+    """STATIC path (the realistic demo generator): build the index over an explicit set of records
+    with NO now-based pruning. `window_start`/`window_end` span the actual event times so the
+    frontend slider scrubs the real catalogue date range (e.g. Jan 2026), independent of `now`."""
+    recs = sorted(records, key=lambda r: r["time"], reverse=True)
+    times = [r["time"] for r in recs]
+    window_start = min(times) if times else generated_iso
+    window_end = max(times) if times else generated_iso
+    return _index_envelope(
+        generated_iso, window_start, window_end, cfg, mock, [index_feature(r) for r in recs]
+    )
 
 
 def write_index(out_dir: str, index: dict) -> str:
@@ -123,6 +174,14 @@ def _require(cond: bool, msg: str) -> None:
         raise AssertionError(f"contract violation: {msg}")
 
 
+def _validate_reference(ref: dict) -> None:
+    for k in ("source", "gamma", "delta", "strike", "dip", "rake", "mt6", "kagan_deg"):
+        _require(k in ref, f"reference missing '{k}'")
+    _require(len(ref["mt6"]) == 6, "reference mt6 must be a 6-vector")
+    _require(-30.0 <= ref["gamma"] <= 30.0, "reference gamma out of [-30,30]")
+    _require(-90.0 <= ref["delta"] <= 90.0, "reference delta out of [-90,90]")
+
+
 def validate_event(rec: dict) -> None:
     for k in ("id", "time", "mag", "depth_km", "lon", "lat", "strike", "dip", "rake"):
         _require(k in rec, f"event missing '{k}'")
@@ -132,17 +191,22 @@ def validate_event(rec: dict) -> None:
     _require(len(p["gamma"]) > 0, "empty posterior")
     _require(all(-30.0 <= g <= 30.0 for g in p["gamma"]), "gamma out of [-30,30]")
     _require(all(-90.0 <= d <= 90.0 for d in p["delta"]), "delta out of [-90,90]")
-    ref = rec.get("reference", {})
-    _require("kagan_deg" in ref and "source" in ref, "reference missing kagan/source")
+    _require("mt6" in p, "posterior missing mt6 ensemble")
+    _require(len(p["mt6"]) > 0, "empty mt6 ensemble")
+    _require(all(len(m) == 6 for m in p["mt6"]), "mt6 entries must be 6-vectors")
+    refs = rec.get("references")
+    _require(isinstance(refs, list) and len(refs) > 0, "references must be a non-empty list")
+    for ref in refs:
+        _validate_reference(ref)
 
 
 def validate_index(index: dict) -> None:
     _require(index.get("type") == "FeatureCollection", "index not a FeatureCollection")
-    for key in ("generated", "window_days", "features"):
+    for key in ("generated", "window_days", "features", "window_start", "window_end"):
         _require(key in index, f"index missing '{key}'")
     for feat in index["features"]:
         props = feat.get("properties", {})
-        for k in ("id", "time", "mag", "ensemble"):
+        for k in ("id", "time", "mag", "ensemble", "primary_source", "n_references"):
             _require(k in props, f"index feature missing '{k}'")
         coords = feat.get("geometry", {}).get("coordinates", [])
         _require(len(coords) == 2, "feature geometry must be [lon, lat]")

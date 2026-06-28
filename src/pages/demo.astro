@@ -34,7 +34,7 @@ const pipeline = [
   <PageHeader
     eyebrow="Live demo · preview"
     title="Real-time earthquake source inference"
-    lead="A continuously-updating monitor for the Japan (F-net) region. Each event is run through a neural posterior estimator; click a marker to compare the inferred moment tensor with the catalogue solution. Scrub the slider to move through the last month."
+    lead="A continuously-updating monitor for the Japan (F-net) region. Each event is run through a neural posterior estimator; click a marker to compare the inferred moment tensor with the catalogue solutions. Drag the two-handle slider to select a date range over the catalogue."
   />
 
   <div class="container container--wide">
@@ -49,9 +49,10 @@ const pipeline = [
         <p class="eyebrow">How it will work</p>
         <h2>A decoupled, precompute-first pipeline</h2>
         <p class="lead">
-          The interface above currently runs on representative mock data. The live system follows a
-          deliberately simple, low-cost architecture — described in full in the project's
-          architecture document.
+          The interface above runs on the <strong>real F-net event catalogue</strong> (January 2026) with
+          reference moment tensors from F-net and USGS; the posterior clouds are illustrative until the
+          trained estimator is wired in. The live system follows a deliberately simple, low-cost architecture
+          — described in full in the project's architecture document.
         </p>
       </header>
 

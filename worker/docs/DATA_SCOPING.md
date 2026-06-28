@@ -187,9 +187,14 @@ solution is shown:
 
 ## 7. Open questions for the agent to resolve live
 
-1. F-net MT **bulk retrieval** — does the F-net website allow programmatic catalogue download
-   (with the account), or is it per-event grid search? (Confirm; `obspy.io.nied.fnetmt` only
-   _parses_.)
+1. F-net MT **bulk retrieval** — **RESOLVED (2026-06-28).** The F-net MT catalogue **search is
+   public** (no login; the account is only for waveforms) and supports a programmatic origin-time
+   range query: `requests.Session` → GET `search.php` (cookie) → POST `mec_search.php` → parse the
+   EUC-JP `<pre>` block. Documented + implemented in `worker/fnet_monitor/fnet_mt.py` +
+   `worker/docs/FNET_MT_CATALOGUE.md` (the live monitor reuses `query_fnet_mt_catalogue` +
+   `match_event`). NOTE: obspy's `io.nied.fnetmt` does NOT parse this web output (expects a
+   count-header) — we parse directly. MT components are **NED**; convert to USE via
+   `[Mrr,Mtt,Mpp,Mrt,Mrp,Mtp]=[mzz,mxx,myy,mxz,-myz,-mxy]`. Coverage on Jan-2026: 68/78 (87%).
 2. Is there a **NIED-documented F-net MT station configuration** (the canonical subset/weights)? If
    so, prefer it as the reliability prior in S3.
 3. Target **month** — pick one with good F-net uptime and a few M≥3.5 events for a lively demo.

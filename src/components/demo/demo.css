@@ -28,6 +28,39 @@
   outline-offset: -2px;
 }
 
+/* SVG fallback map (no WebGL2) */
+.demo-fallbackmap {
+  position: absolute;
+  inset: 0;
+  background: #eef2f6;
+}
+.demo-fallbackmap svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.demo-fallbackmap__note {
+  position: absolute;
+  bottom: var(--space-3);
+  right: var(--space-3);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  background: color-mix(in srgb, var(--paper) 85%, transparent);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+.demo-maploading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+}
+
 /* loading / empty skeleton */
 .demo-skeleton {
   position: absolute;
@@ -292,10 +325,72 @@
   color: var(--ink-faint);
   font-family: var(--font-mono);
 }
+/* two-handle range slider */
+.demo-rangewrap {
+  position: relative;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+.demo-rangetrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+}
+.demo-rangefill {
+  position: absolute;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+}
 .demo-range {
+  position: absolute;
+  left: 0;
   width: 100%;
-  accent-color: var(--accent);
+  height: 32px;
+  margin: 0;
+  background: none;
+  pointer-events: none; /* let the thumbs catch events, not the track */
+  -webkit-appearance: none;
+  appearance: none;
+}
+.demo-range::-webkit-slider-runnable-track {
+  background: none;
+  height: 32px;
+}
+.demo-range::-moz-range-track {
+  background: none;
+  height: 32px;
+}
+.demo-range::-webkit-slider-thumb {
+  pointer-events: auto;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
+}
+.demo-range::-moz-range-thumb {
+  pointer-events: auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.demo-range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .demo-controls__ticks {
   display: flex;
@@ -323,6 +418,83 @@
 .demo-btn:hover {
   border-color: var(--accent);
   color: var(--accent-strong);
+}
+
+/* collapse toggle in the panel head */
+.demo-panel__head {
+  position: relative;
+}
+.demo-panel__collapse {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 1.7rem;
+  height: 1.7rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+.demo-panel__collapse:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+/* multi-reference catalogue comparison */
+.demo-refs {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+}
+.demo-refs__title {
+  font-size: var(--step--1);
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+.demo-refs__hint {
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+.demo-refs__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.demo-ref {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  text-align: center;
+}
+.demo-ref canvas {
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px var(--border);
+}
+.demo-ref__cap {
+  display: grid;
+  gap: 0.1rem;
+  font-size: 0.68rem;
+  max-width: 6.5rem;
+}
+.demo-ref__src {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  justify-content: center;
+  color: var(--ink-soft);
+}
+.demo-ref__num {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.ref-glyph {
+  flex: none;
 }
 
 @media (max-width: 860px) {
