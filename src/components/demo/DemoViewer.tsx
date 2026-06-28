@@ -3,7 +3,7 @@ import './demo.css';
 import MapView from './MapView';
 import EventPanel from './EventPanel';
 import TimeSlider from './TimeSlider';
-import { type EventCollection, sourceColor } from './types';
+import { type EventIndex, sourceColor } from './types';
 
 const DATA_URL = `${import.meta.env.BASE_URL}demo/events.json`;
 const DAY = 86400_000;
@@ -16,7 +16,7 @@ const LEGEND = [
 ];
 
 export default function DemoViewer() {
-  const [coll, setColl] = useState<EventCollection | null>(null);
+  const [coll, setColl] = useState<EventIndex | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cutoff, setCutoff] = useState<number>(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -28,7 +28,7 @@ export default function DemoViewer() {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((data: EventCollection) => {
+      .then((data: EventIndex) => {
         if (!alive) return;
         setColl(data);
         setCutoff(Date.parse(data.generated));
@@ -99,7 +99,7 @@ export default function DemoViewer() {
         </div>
       </div>
 
-      <EventPanel event={selected} />
+      <EventPanel feature={selected} />
 
       <TimeSlider
         minMs={minMs}

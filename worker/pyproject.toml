@@ -1,0 +1,10 @@
+[project]
+name = "fnet-monitor"
+version = "0.1.0"
+description = "F-net inference worker for the personal-page live demo (skeleton)."
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-q"

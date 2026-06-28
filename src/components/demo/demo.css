@@ -219,12 +219,22 @@
   padding: var(--space-2);
   aspect-ratio: 1;
 }
-.demo-fig__frame img {
-  max-height: 100%;
-  width: auto;
+.demo-fig__frame canvas {
+  max-width: 100%;
+  height: auto;
+}
+.demo-fig__loading {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: var(--step-1);
 }
 .demo-fig--lune .demo-fig__frame {
   aspect-ratio: 3 / 4;
+}
+.demo-fig--lune .lune {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
 }
 
 .demo-meta {

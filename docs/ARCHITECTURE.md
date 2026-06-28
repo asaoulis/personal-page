@@ -43,9 +43,9 @@ Build a single, polished web presence for a computational-seismology / ML resear
 - ✅ Pages: Home, About, CV (+ placeholder PDF), Projects (content-collection driven), Contact
   (scraper-safe email), and a `/demo` **interface preview**.
 - ✅ `/demo`: a real **MapLibre GL** map over Japan with **mock GeoJSON** events, clickable
-  markers, a working side panel (real lune + beachball images), and a functioning client-side
-  **time-slider** — proving the whole interaction model end-to-end on representative data.
-- ✅ This document + a data contract the live worker must satisfy.
+  markers, a side panel rendering the **lune (SVG) + beachball (canvas) client-side** from compact
+  JSON, and a functioning client-side **time-slider** — the whole interaction model end-to-end.
+- ✅ This document + the v2 data contract + the **M-D1 worker skeleton** (`worker/`) that emits it.
 
 Everything from here is the path to making the demo _live_.
 
@@ -110,62 +110,67 @@ artifacts; the frontend is a fast static site that reads them.
 
 ---
 
-## 4. Data contract (worker → frontend)
+## 4. Data contract v2 (worker → frontend)
 
-The frontend reads a **single GeoJSON `FeatureCollection`** describing the current window. The
-stage-1 mock at `public/demo/events.json` already uses this exact shape — the live worker must
-emit the same schema so the frontend needs no changes to go live.
+Built in the M-D1 skeleton (`worker/`) and consumed by `/demo`. The worker emits **compact JSON
+ensembles, not images** — the browser renders the lune (SVG) and beachball (canvas) from the
+numbers. A lune only needs `(γ, δ)` per posterior sample (2 floats), so ~400 samples ≈ ~5 KB
+rounded — _smaller_ than a PNG, and interactive/themeable. Two files, split for lazy-loading.
+
+**`events.json`** — compact GeoJSON index (drives the map + slider; one summary Feature/event, no
+ensemble inline):
 
 ```jsonc
 {
-  "type": "FeatureCollection",
-  "generated": "2026-06-28T00:00:00Z",   // worker run time (slider's "now")
-  "window_days": 30,                       // rolling retention window
-  "mock": false,                           // true only for the placeholder data
-  "features": [
-    {
-      "type": "Feature",
-      "geometry": { "type": "Point", "coordinates": [lon, lat] },
-      "properties": {
-        "id": "ev-2026-06-26-off-ibaraki",
-        "time": "2026-06-26T21:36:00Z",
-        "mag": 5.2, "magType": "Mw",
-        "depth_km": 32,
-        "region": "Off Ibaraki, Honshu",
-        "source_type": "double-couple",
-        "gamma": 1.5, "delta": -2.0,        // lune (source-type) coordinates, degrees
-        "kagan_deg": 10.2,                   // model-vs-catalogue Kagan angle
-        "strike": 198, "dip": 33, "rake": 86,
-        "catalogue_source": "F-net",
-        "assets": {
-          "beachball": "/demo/<id>/beachball.png",
-          "lune": "/demo/<id>/lune.png"
-          // future: "posterior": "/demo/<id>/samples.json" for native-JS plots
-        }
-      }
+  "type": "FeatureCollection", "schema": 2,
+  "generated": "2026-06-28T00:00:00Z",      // worker run time (slider's "now")
+  "window_days": 30, "region": "Japan (F-net)", "mock": false,
+  "features": [{
+    "type": "Feature",
+    "geometry": { "type": "Point", "coordinates": [lon, lat] },
+    "properties": {
+      "id": "ev-…", "time": "2026-06-26T21:36:00Z",
+      "mag": 5.2, "magType": "Mw", "depth_km": 32, "region": "Off Ibaraki, Honshu",
+      "source_type": "double-couple", "gamma": 1.5, "delta": -2.0,   // posterior-mean lune coords
+      "strike": 198, "dip": 33, "rake": 86, "kagan_deg": 10.2, "catalogue_source": "F-net",
+      "ensemble": "events/ev-….json"          // lazy-loaded on click
     }
-  ]
+  }]
 }
 ```
 
+**`events/<id>.json`** — the full per-event record, fetched only when an event is selected:
+
+```jsonc
+{
+  "id": "ev-…", "time": "…", "mag": 5.2, "depth_km": 32, "lon": …, "lat": …,
+  "source_type": "double-couple", "strike": 198, "dip": 33, "rake": 86,
+  "posterior": { "gamma": [ /* ~400 */ ], "delta": [ /* ~400 */ ] },   // drives the SVG lune
+  "summary": { "gamma": 1.5, "delta": -2.0 },
+  "reference": { "source": "F-net", "gamma": …, "delta": …,
+                 "strike": …, "dip": …, "rake": …, "kagan_deg": 10.2 },
+  "provenance": { "generated": "…", "mock": false, "model": "seismo_sbi-npe" }
+}
+```
+
+`worker/fnet_monitor/contract.py` is the schema source of truth (`validate_index` / `validate_event`);
+keep it in lockstep with the frontend's `src/components/demo/types.ts`.
+
 ### 4.1 Time-slider data model
 
-- The frontend loads the **whole window** (one `events.json`) once. The slider's value is a
-  cutoff timestamp in `[generated − window_days, generated]`; **events with `time ≤ cutoff` are
-  shown** (so scrubbing back "un-happens" recent events). Filtering is in-memory → instant.
-- **Retention.** The worker keeps a rolling `window_days` window: each run appends new events and
-  drops any older than the window (and prunes their `public/demo/<id>/` asset dirs). The store
-  stays bounded and small.
-- **Scale.** At M≥3.5 in one region this is tens of events and a few hundred KB of JSON + a
-  handful of small PNGs — trivial for a CDN and the browser. If it ever grows, shard by
-  week/month and lazy-load, or move assets to R2.
+- The frontend loads `events.json` (the index) once. The slider's value is a cutoff in
+  `[generated − window_days, generated]`; **events with `time ≤ cutoff` are shown** (scrubbing back
+  "un-happens" recent events). Filtering is in-memory → instant. Per-event ensembles load lazily on
+  click, so the initial payload stays a few KB.
+- **Retention.** Each run prunes events (and their `events/<id>.json`) older than `window_days`.
 
 ### 4.2 Store contents
 
-Per run the static store holds: `events.json` (the frontend contract above); per-event
-`<id>/lune.png` + `<id>/beachball.png` (and later `<id>/samples.json` for native-JS plots); and a
-**worker-only `state.json`** (`last_processed_id`, `last_time`, backlog queue, measured
-`archive_lag`) that the stateless cron reads to resume — **never fetched by the frontend** (see §6.5).
+Per run the store holds `events.json` (index), per-event `events/<id>.json` (ensembles), and a
+**worker-only `state.json`** (`last_time`, `processed_ids` backlog, measured `archive_lag`) the
+stateless cron reads to resume — **never fetched by the frontend** (§6.5). JSON-only → the binary
+git-bloat problem essentially disappears; the worker still publishes to an orphan **`data` branch**
+so frequent automated commits don't churn `main` or trigger Vercel rebuilds.
 
 ---
 
@@ -179,14 +184,18 @@ produces. Verified entry points:
 | Rebuild NPE from a checkpoint         | `evaluation/inference.py` → `build_eval_pipeline`, `build_ml_posterior(ckpt_dir, pipeline)`     | ~seconds/event on CPU once the model is loaded — cold-start dominates (see §6.4). |
 | Ingest a fetched observation          | `evaluation/inference.py` → `load_real_observation`                                             | Undoes receiver time shifts, etc.                                                 |
 | Posterior MT samples (physical units) | `evaluation/inference.py` → `recovered_mt_samples(inv) → (n,6)`                                 | Feeds lune + beachball.                                                           |
-| Source-type lune plot                 | `plotting/lune.py` (`mts6_to_gamma_delta`, `plot_scatter_on_lune`, `plot_kde_contours_on_lune`) | Worker renders the **lune PNG** (catalogue MT vs model cloud).                    |
+| Source-type lune plot                 | `plotting/lune.py` (`mts6_to_gamma_delta`, `plot_scatter_on_lune`, `plot_kde_contours_on_lune`) | Convention reference; the web demo renders the lune client-side (`Lune.tsx`).     |
 | Beachball + Kagan comparison          | `evaluation/moment_tensor.py` → `pyrocko_mt(m6)`, `kagan(a,b)`                                  | GCMT up-south-east convention (no Mrp/Mtp flip since the 2026-06-13 fix).         |
 | Catalogue-wide visual style           | `scripts/santorini_pathbreaker/lomax_catalogue/catalogue_map.py`, `posterior_gallery.py`        | Reference for beachball-map + posterior panels (size∝Mw, colour=source-type γ).   |
 
-**Plotting strategy.** Basemap/cartopy/pyrocko are heavy and Python-only. v1 demo visuals are
-therefore **server-rendered PNGs** produced by the existing code (least effort, exactly matches
-the published figures). A later enhancement is a **native-JS lune** (d3/canvas) reading a
-`samples.json` for interactive hover/zoom — but PNG-first is the right starting point.
+**Plotting strategy — client-side from JSON (chosen in M-D1).** Basemap/cartopy/pyrocko are heavy
+and Python-only, so rather than render images server-side the worker emits compact **(γ, δ)
+ensembles + strike/dip/rake** and the **frontend draws the plots**: the **lune in SVG**
+(`Lune.tsx`, Hammer projection) and the **beachball in canvas** (`Beachball.tsx`, focal-sphere
+raster from the mechanism). Smaller than PNGs, interactive, theme-aware, retina-crisp. The
+`seismo_sbi` plotting code above stays the **convention reference** (and can still produce
+high-fidelity static figures); at M-D2 the worker reuses `seismo_sbi` for the **inference**
+(posterior samples) + the reference-MT/Kagan comparison, not for rendering.
 
 ---
 
@@ -325,10 +334,10 @@ Operational risks for the live worker (grounded; mitigations noted):
 - **GitHub Actions cron is best-effort** — late/skipped under load, and **auto-disabled after
   ~60 days of repo inactivity**. → Document the looseness; use an external pinger
   (`workflow_dispatch`) if punctuality ever matters; a periodic commit keeps it from disabling.
-- **Git binary bloat.** Committing per-event PNGs to the site repo grows history **permanently**
-  (git keeps every binary forever). → Mitigate with an **orphan `data` branch** (force-pushed, no
-  history), or move binaries to **Cloudflare R2 / HF dataset** (JSON-only in git), or rolling-window
-  prune. Decide _before_ the worker lands — the default "git-committed" path needs one of these.
+- **Git bloat — largely resolved by the v2 JSON contract.** With no committed PNGs (the browser
+  renders plots), artifacts are tiny JSON. The worker still publishes to an **orphan `data` branch**
+  (force-pushed each run → single commit, no growing history) so frequent automated commits never
+  touch `main` or trigger a Vercel rebuild. If volume ever balloons, move JSON to **R2 / HF dataset**.
 - **WIN32 tooling in CI.** The `win32tools` binaries (`catwin32`/`win2sac_32`) must be built/cached
   in the workflow or WIN32 → SAC conversion silently breaks (§6.2).
 - **NIED login brittleness + ToS.** HinetPy drives an authenticated NIED flow that can break on
@@ -352,22 +361,23 @@ Each milestone is independently shippable.
 
 Repo + tooling, design system, content pages, `/demo` preview, this doc, Vercel deploy.
 
-### Flagship demo — 🔭
+### Flagship demo
 
-1. **M-D1 Worker skeleton (no inference).** GitHub Actions cron + a Python entrypoint that polls
-   USGS FDSN (+ JMA/AQUA for the M3.5–4.5 band) for new Japan events since `state.json.last_time`,
-   applies the **delay window** (§6.3), and writes/updates `events.json` + `state.json` — wiring the
-   whole contract end-to-end on real triggers but mock/empty inference output.
-2. **M-D2 Inference.** F-net **fetch via HinetPy (code `0103`)** + build/cache **`win32tools`** for
-   WIN32 → SAC; **load model + GF DB once per run**, run `seismo_sbi` inference (~seconds/event),
-   render lune + beachball PNGs, commit results.
-3. **M-D3 Catalogue comparison.** Pull reference MTs (F-net routine / AQUA / GCMT via
-   `obspy.io.nied.fnetmt`); compute + display the Kagan angle and overlay catalogue vs model on the
-   lune. Label Mw 3.5–3.8 as best-effort (regional-MT floor).
-4. **M-D4 Retention + robustness.** Rolling-window pruning + **git-bloat mitigation** (orphan `data`
-   branch or R2), stateful backlog/burst handling, auth-refresh + failure alerting, NIED/F-net +
-   tile attributions, re-measured `archive_lag`.
-5. **M-D5 (optional) Native-JS plots.** `samples.json` per event + a d3/canvas interactive lune.
+1. **M-D1 Worker skeleton (no inference) — ✅ done.** `worker/fnet_monitor/` polls USGS FDSN for new
+   Japan events on the **delay window** (§6.3), maintains `state.json`, and writes the v2 contract
+   (`events.json` + per-event ensembles) with a deterministic **mock** posterior. GitHub Actions cron
+   (`.github/workflows/update-events.yml`) publishes to the orphan `data` branch. The frontend renders
+   the **lune (SVG) + beachball (canvas) client-side** from the JSON (no PNGs). Pytest-covered.
+2. **M-D2 Inference — 🔭.** F-net **fetch via HinetPy (code `0103`)** + build/cache **`win32tools`**
+   for WIN32 → SAC; **load model + GF DB once per run**, run `seismo_sbi` inference (~seconds/event),
+   emit real `(γ, δ)` ensembles — swap `inference.real_posterior` in, output shape unchanged.
+3. **M-D3 Catalogue comparison — 🔭.** Pull reference MTs (F-net routine / AQUA / GCMT via
+   `obspy.io.nied.fnetmt`); compute the Kagan angle and overlay catalogue vs model on the lune.
+   Label Mw 3.5–3.8 as best-effort (regional-MT floor).
+4. **M-D4 Robustness — 🔭.** Wire the M3.5–4.5 low-band trigger (JMA/AQUA), auth-refresh + failure
+   alerting, NIED/F-net + tile attributions in the demo footer, re-measured `archive_lag`.
+5. **M-D5 Richer interactions — 🔭.** Hover a posterior sample, KDE-contour shading on the lune,
+   click-through to the per-event record. (Client-side rendering itself shipped in M-D1.)
 
 ### Other project pages — 🔭
 

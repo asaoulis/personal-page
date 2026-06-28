@@ -5,3 +5,9 @@ node_modules/
 package-lock.json
 *.pdf
 *.ico
+
+# worker-generated data store (compact JSON written by fnet_monitor; not hand-edited)
+public/demo/
+# python worker artifacts
+worker/**/__pycache__/
+worker/.pytest_cache/

@@ -1,6 +1,8 @@
-/** Data contract shared by the mock GeoJSON and the future live worker output. */
+/** v2 data contract — compact JSON the browser renders into plots client-side.
+ * Shared shape between the worker output and this frontend. */
 
-export interface EventProps {
+/** A summary feature in the `events.json` index (drives the map + slider). */
+export interface EventSummaryProps {
   id: string;
   time: string; // ISO 8601
   mag: number;
@@ -8,29 +10,58 @@ export interface EventProps {
   depth_km: number;
   region: string;
   source_type: string;
-  gamma: number; // lune longitude (deg)
-  delta: number; // lune latitude (deg)
-  kagan_deg: number;
+  gamma: number; // posterior-mean lune coords
+  delta: number;
   strike: number;
   dip: number;
   rake: number;
+  kagan_deg: number;
   catalogue_source: string;
-  assets: { beachball: string; lune: string };
+  ensemble: string; // relative path to the per-event record, e.g. "events/<id>.json"
 }
 
 export interface EventFeature {
   type: 'Feature';
   geometry: { type: 'Point'; coordinates: [number, number] }; // [lon, lat]
-  properties: EventProps;
+  properties: EventSummaryProps;
 }
 
-export interface EventCollection {
+export interface EventIndex {
   type: 'FeatureCollection';
+  schema?: number;
   generated: string;
   window_days: number;
+  region?: string;
   mock?: boolean;
-  note?: string;
   features: EventFeature[];
+}
+
+/** The lazily-fetched per-event record carrying the posterior ensemble. */
+export interface EventRecord {
+  id: string;
+  time: string;
+  mag: number;
+  magType: string;
+  depth_km: number;
+  lon: number;
+  lat: number;
+  region: string;
+  source_type: string;
+  strike: number;
+  dip: number;
+  rake: number;
+  posterior: { gamma: number[]; delta: number[] };
+  summary: { gamma: number; delta: number };
+  reference: {
+    source: string;
+    gamma: number;
+    delta: number;
+    strike: number;
+    dip: number;
+    rake: number;
+    kagan_deg: number;
+  };
+  provenance: { generated: string; mock: boolean; model: string };
 }
 
 /** Marker colour by (coarse) source type. */
