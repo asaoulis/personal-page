@@ -1,0 +1,148 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import DemoViewer from '../components/demo/DemoViewer.tsx';
+
+const pipeline = [
+  {
+    n: '01',
+    t: 'Monitor',
+    d: 'A scheduled worker polls the earthquake catalogue (USGS / JMA / NIED F-net) for new events in the Japan region above ~M3.5.',
+  },
+  {
+    n: '02',
+    t: 'Infer',
+    d: 'It fetches waveforms and runs the trained neural posterior estimator on CPU, producing a full moment-tensor posterior in seconds.',
+  },
+  {
+    n: '03',
+    t: 'Publish',
+    d: 'Beachballs, source-type lune plots and a compact results JSON are rendered and committed to a static store — no live model server in the request path.',
+  },
+  {
+    n: '04',
+    t: 'Explore',
+    d: 'This viewer reads the precomputed month-long window. The time-slider is pure client-side filtering, so scrubbing is instant.',
+  },
+];
+---
+
+<BaseLayout
+  title="Live Demo"
+  description="Interactive preview of a real-time earthquake source-inference monitor for the Japan F-net region."
+>
+  <PageHeader
+    eyebrow="Live demo · preview"
+    title="Real-time earthquake source inference"
+    lead="A continuously-updating monitor for the Japan (F-net) region. Each event is run through a neural posterior estimator; click a marker to compare the inferred moment tensor with the catalogue solution. Scrub the slider to move through the last month."
+  />
+
+  <div class="container container--wide">
+    <DemoViewer client:only="react">
+      <div slot="fallback" class="demo-fallback">Loading interactive map…</div>
+    </DemoViewer>
+  </div>
+
+  <section class="section how">
+    <div class="container">
+      <header class="section-head reveal">
+        <p class="eyebrow">How it will work</p>
+        <h2>A decoupled, precompute-first pipeline</h2>
+        <p class="lead">
+          The interface above currently runs on representative mock data. The live system follows a
+          deliberately simple, low-cost architecture — described in full in the project's
+          architecture document.
+        </p>
+      </header>
+
+      <ol class="pipeline">
+        {
+          pipeline.map((s, i) => (
+            <li class="pipeline__step reveal" data-delay={`${i * 80}ms`}>
+              <span class="pipeline__n">{s.n}</span>
+              <h3 class="pipeline__t">{s.t}</h3>
+              <p class="pipeline__d">{s.d}</p>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="how__note reveal">
+        <p>
+          <strong>Reused from my research library.</strong> The moment-tensor conventions, beachball rendering
+          and source-type lune plots come straight from the seismology codebase that powers my published
+          inversions — the web demo simply serves what the inference pipeline already produces.
+        </p>
+        <p class="muted">
+          Prerequisites for going live: a trained F-net neural posterior estimator, a Japan-region
+          Green's-function database, and periodic F-net data access. These are tracked in the
+          roadmap, not in this preview.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .demo-fallback {
+    min-height: 540px;
+    display: grid;
+    place-items: center;
+    margin-block: var(--space-5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-subtle);
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+
+  .how {
+    border-top: 1px solid var(--border);
+    background: var(--bg-subtle);
+  }
+  .section-head {
+    max-width: var(--measure);
+    margin-bottom: var(--space-6);
+  }
+  .section-head h2 {
+    margin-top: var(--space-2);
+  }
+  .section-head .lead {
+    margin-top: var(--space-3);
+  }
+
+  .pipeline {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+  .pipeline__step {
+    padding: var(--space-5);
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .pipeline__n {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--accent);
+  }
+  .pipeline__t {
+    font-size: var(--step-1);
+    margin: var(--space-2) 0;
+  }
+  .pipeline__d {
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+  }
+
+  .how__note {
+    max-width: var(--measure);
+    margin-top: var(--space-6);
+    display: grid;
+    gap: var(--space-3);
+  }
+</style>

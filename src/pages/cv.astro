@@ -1,0 +1,248 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Icon from '../components/Icon.astro';
+import { SITE } from '../config';
+
+// TODO: replace all entries below with the real CV. Structure is final.
+const education = [
+  {
+    when: '2021 — 2026',
+    what: 'PhD, Computational Seismology & Machine Learning',
+    where: SITE.affiliation,
+    note: 'Simulation-based inference for earthquake source characterisation.',
+  },
+  {
+    when: '2017 — 2021',
+    what: 'MSci, Physics',
+    where: 'University (TODO)',
+    note: 'First-class honours. TODO: details.',
+  },
+];
+
+const experience = [
+  {
+    when: '2024 — present',
+    what: 'Research thread: SBI for cosmology',
+    where: 'Collaboration (TODO)',
+    note: 'Transferring neural-compression + flow methods to cosmological inference.',
+  },
+  {
+    when: '2022 — 2023',
+    what: 'Role / internship (TODO)',
+    where: 'Organisation (TODO)',
+    note: 'TODO: one-line description of contributions.',
+  },
+];
+
+const publications = [
+  {
+    cite: 'Saoulis, A. et al. (2026). Amortised moment-tensor inference with neural posterior estimation. Journal (TODO).',
+    href: '#',
+  },
+  {
+    cite: 'Saoulis, A. et al. (2025). Neural compression for simulation-based seismology. Proceedings (TODO).',
+    href: '#',
+  },
+];
+
+const talks = [
+  { when: '2026', what: 'Invited talk — conference (TODO)' },
+  { when: '2025', what: 'Contributed talk / poster (TODO)' },
+];
+
+const skills = [
+  'Python',
+  'PyTorch',
+  'Simulation-based inference',
+  'Bayesian methods',
+  'ObsPy / seismology',
+  'HPC / SLURM',
+  'Normalising flows',
+  'Diffusion models',
+  'Scientific visualisation',
+];
+---
+
+<BaseLayout title="CV" description={`Curriculum vitae of ${SITE.title}.`}>
+  <PageHeader
+    eyebrow="Curriculum Vitae"
+    title="CV"
+    lead={`A short overview of ${SITE.title}'s education, experience and research output.`}
+  />
+
+  <section class="section">
+    <div class="container cv">
+      <div class="cv__actions reveal">
+        <a class="btn btn--primary" href="/cv.pdf" download>
+          Download PDF <Icon name="arrow" size={18} />
+        </a>
+        <p class="muted cv__note">The PDF is a placeholder until the full CV is finalised.</p>
+      </div>
+
+      <div class="cv__col">
+        <section class="cv__section reveal">
+          <h2>Education</h2>
+          <ul class="timeline">
+            {
+              education.map((e) => (
+                <li>
+                  <span class="timeline__when">{e.when}</span>
+                  <div>
+                    <p class="timeline__what">{e.what}</p>
+                    <p class="timeline__where">{e.where}</p>
+                    <p class="timeline__note muted">{e.note}</p>
+                  </div>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section class="cv__section reveal">
+          <h2>Experience</h2>
+          <ul class="timeline">
+            {
+              experience.map((e) => (
+                <li>
+                  <span class="timeline__when">{e.when}</span>
+                  <div>
+                    <p class="timeline__what">{e.what}</p>
+                    <p class="timeline__where">{e.where}</p>
+                    <p class="timeline__note muted">{e.note}</p>
+                  </div>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section class="cv__section reveal">
+          <h2>Selected publications</h2>
+          <ul class="pub-list">
+            {
+              publications.map((p) => (
+                <li>
+                  <a href={p.href}>{p.cite}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section class="cv__section reveal">
+          <h2>Talks</h2>
+          <ul class="timeline">
+            {
+              talks.map((t) => (
+                <li>
+                  <span class="timeline__when">{t.when}</span>
+                  <div>
+                    <p class="timeline__what">{t.what}</p>
+                  </div>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+
+        <section class="cv__section reveal">
+          <h2>Skills</h2>
+          <ul class="skills">
+            {skills.map((s) => <li>{s}</li>)}
+          </ul>
+        </section>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .cv {
+    display: grid;
+    gap: var(--space-7);
+  }
+  .cv__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-4);
+  }
+  .cv__note {
+    font-size: var(--step--1);
+  }
+  .cv__col {
+    display: grid;
+    gap: var(--space-7);
+    max-width: 48rem;
+  }
+  .cv__section h2 {
+    font-size: var(--step-2);
+    padding-bottom: var(--space-2);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-4);
+  }
+
+  .timeline {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-4);
+  }
+  .timeline li {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: var(--space-4);
+  }
+  .timeline__when {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--accent);
+    padding-top: 0.15rem;
+  }
+  .timeline__what {
+    font-weight: 600;
+  }
+  .timeline__where {
+    color: var(--ink-soft);
+  }
+  .timeline__note {
+    font-size: var(--step--1);
+    margin-top: 0.15rem;
+  }
+
+  .pub-list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .pub-list a {
+    color: var(--ink);
+  }
+  .pub-list a:hover {
+    color: var(--accent-strong);
+  }
+
+  .skills {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .skills li {
+    font-size: var(--step--1);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.25rem 0.7rem;
+  }
+
+  @media (max-width: 620px) {
+    .timeline li {
+      grid-template-columns: 1fr;
+      gap: var(--space-1);
+    }
+  }
+</style>

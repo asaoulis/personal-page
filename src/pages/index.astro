@@ -1,0 +1,194 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import Icon from '../components/Icon.astro';
+import { SITE } from '../config';
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const featured = projects.slice(0, 3);
+
+const focus = [
+  {
+    title: 'Simulation-based inference',
+    body: 'Amortised neural posterior estimation that turns expensive forward simulators into fast, calibrated inference.',
+  },
+  {
+    title: 'Earthquake source characterisation',
+    body: 'Moment tensors and source parameters from waveforms — with honest, full posterior uncertainty.',
+  },
+  {
+    title: 'Generative & ML methods',
+    body: 'Neural compression, normalising flows and diffusion models, applied across geophysics, cosmology and climate.',
+  },
+];
+---
+
+<BaseLayout>
+  <section class="hero">
+    <div class="container hero__inner">
+      <p class="eyebrow reveal">{SITE.affiliation}</p>
+      <h1 class="hero__name reveal" data-delay="60ms">{SITE.title}</h1>
+      <p class="hero__role reveal" data-delay="120ms">{SITE.role}</p>
+      <p class="lead hero__tagline reveal" data-delay="180ms">{SITE.tagline}</p>
+      <div class="hero__cta reveal" data-delay="240ms">
+        <a class="btn btn--primary" href="/demo/">
+          Explore the live demo <Icon name="arrow" size={18} />
+        </a>
+        <a class="btn btn--ghost" href="/projects/">View projects</a>
+      </div>
+    </div>
+    <div class="hero__wave" aria-hidden="true">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <path
+          d="M0 60 H120 l18 -34 l20 64 l16 -78 l22 96 l18 -52 l20 30 l24 -12 H520 l18 -40 l20 72 l16 -86 l22 104 l18 -58 l20 36 l24 -14 H1200"
+        ></path>
+      </svg>
+    </div>
+  </section>
+
+  <section class="section focus">
+    <div class="container">
+      <ul class="focus__grid">
+        {
+          focus.map((f, i) => (
+            <li class="focus__item reveal" data-delay={`${i * 80}ms`}>
+              <h2 class="focus__title">{f.title}</h2>
+              <p class="focus__body">{f.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <header class="section-head reveal">
+        <p class="eyebrow">Selected work</p>
+        <h2>Projects</h2>
+        <p class="lead">
+          A live deployment of my research, alongside parallel threads in cosmology and climate.
+        </p>
+      </header>
+      <ul class="cards-grid">
+        {
+          featured.map((p, i) => (
+            <li class="reveal" data-delay={`${i * 90}ms`}>
+              <ProjectCard project={p} />
+            </li>
+          ))
+        }
+      </ul>
+      <p class="section-foot">
+        <a class="link-arrow" href="/projects/">All projects <Icon name="arrow" size={18} /></a>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(var(--space-8), 12vh, var(--space-10)) var(--space-9);
+  }
+  .hero__inner {
+    position: relative;
+    z-index: 1;
+    max-width: 46rem;
+  }
+  .hero__name {
+    margin-top: var(--space-2);
+  }
+  .hero__role {
+    margin-top: var(--space-3);
+    font-family: var(--font-serif);
+    font-size: var(--step-2);
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .hero__tagline {
+    margin-top: var(--space-4);
+    max-width: 38rem;
+  }
+  .hero__cta {
+    margin-top: var(--space-6);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .hero__wave {
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 120px;
+    color: var(--accent);
+    opacity: 0.12;
+    pointer-events: none;
+    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  }
+  .hero__wave svg {
+    width: 100%;
+    height: 100%;
+  }
+  .hero__wave path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .focus {
+    border-block: 1px solid var(--border);
+    background: var(--bg-subtle);
+  }
+  .focus__grid {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+  .focus__title {
+    font-size: var(--step-1);
+    margin-bottom: var(--space-2);
+  }
+  .focus__body {
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+  }
+
+  .section-head {
+    max-width: var(--measure);
+    margin-bottom: var(--space-6);
+  }
+  .section-head h2 {
+    margin-top: var(--space-2);
+  }
+  .section-head .lead {
+    margin-top: var(--space-3);
+  }
+  .cards-grid {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  }
+  .section-foot {
+    margin-top: var(--space-6);
+  }
+  .link-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+  }
+  .link-arrow :global(svg) {
+    transition: transform var(--dur) var(--ease);
+  }
+  .link-arrow:hover :global(svg) {
+    transform: translateX(4px);
+  }
+</style>

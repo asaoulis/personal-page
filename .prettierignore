@@ -1,0 +1,7 @@
+dist/
+.astro/
+node_modules/
+.vercel/
+package-lock.json
+*.pdf
+*.ico

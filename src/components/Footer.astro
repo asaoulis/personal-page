@@ -1,0 +1,99 @@
+---
+import { SITE, SOCIALS, EMAIL } from '../config';
+import Icon from './Icon.astro';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div class="site-footer__brand">
+      <p class="site-footer__name">{SITE.title}</p>
+      <p class="muted">{SITE.role}</p>
+    </div>
+
+    <nav class="site-footer__links" aria-label="Social and contact links">
+      {
+        SOCIALS.map((s) => (
+          <a href={s.href} target="_blank" rel="me noopener noreferrer" aria-label={s.label}>
+            <Icon name={s.icon} size={20} />
+          </a>
+        ))
+      }
+      <a
+        class="js-email"
+        href="#"
+        aria-label="Email"
+        data-user={EMAIL.user}
+        data-domain={EMAIL.domain}
+      >
+        <Icon name="email" size={20} />
+      </a>
+    </nav>
+  </div>
+
+  <div class="container site-footer__legal muted">
+    <span>© {year} {SITE.title}</span>
+    <span>Built with Astro · deployed on Vercel</span>
+  </div>
+</footer>
+
+<script>
+  // Assemble the email at runtime so it never appears as plaintext in the HTML.
+  document.querySelectorAll('a.js-email').forEach((el) => {
+    const a = el as HTMLAnchorElement;
+    const addr = `${a.dataset.user}@${a.dataset.domain}`;
+    a.href = `mailto:${addr}`;
+  });
+</script>
+
+<style>
+  .site-footer {
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+    background: var(--bg-subtle);
+    padding-block: var(--space-6) var(--space-5);
+  }
+  .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+  .site-footer__name {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .site-footer__links {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .site-footer__links a {
+    display: inline-flex;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    color: var(--ink-soft);
+    transition:
+      color var(--dur) var(--ease),
+      background var(--dur) var(--ease),
+      transform var(--dur) var(--ease);
+  }
+  .site-footer__links a:hover {
+    color: var(--accent-strong);
+    background: var(--paper);
+    transform: translateY(-2px);
+  }
+  .site-footer__legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    justify-content: space-between;
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+    font-size: var(--step--1);
+  }
+</style>

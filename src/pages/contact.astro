@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Icon from '../components/Icon.astro';
+import { SITE, SOCIALS, EMAIL } from '../config';
+---
+
+<BaseLayout title="Contact" description={`Get in touch with ${SITE.title}.`}>
+  <PageHeader
+    eyebrow="Contact"
+    title="Get in touch"
+    lead="Happy to talk about simulation-based inference, seismology, collaborations, or any of the projects on this site."
+  />
+
+  <section class="section">
+    <div class="container contact">
+      <div class="contact__primary reveal">
+        <p class="contact__label eyebrow">Email</p>
+        <a
+          class="contact__email js-email"
+          href="#"
+          data-user={EMAIL.user}
+          data-domain={EMAIL.domain}
+        >
+          <Icon name="email" size={22} />
+          <span class="js-email-text">Reveal email address</span>
+        </a>
+        <p class="muted contact__hint">
+          The address is assembled in your browser to keep it away from scrapers.
+        </p>
+      </div>
+
+      <div class="contact__links reveal" data-delay="80ms">
+        <p class="contact__label eyebrow">Elsewhere</p>
+        <ul>
+          {
+            SOCIALS.map((s) => (
+              <li>
+                <a href={s.href} target="_blank" rel="me noopener noreferrer">
+                  <Icon name={s.icon} size={20} />
+                  <span>{s.label}</span>
+                  <Icon name="external" size={16} class="contact__ext" />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  document.querySelectorAll('a.js-email').forEach((el) => {
+    const a = el as HTMLAnchorElement;
+    const addr = `${a.dataset.user}@${a.dataset.domain}`;
+    a.href = `mailto:${addr}`;
+    const label = a.querySelector('.js-email-text');
+    if (label) label.textContent = addr;
+  });
+</script>
+
+<style>
+  .contact {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--space-7);
+    align-items: start;
+  }
+  .contact__label {
+    margin-bottom: var(--space-3);
+  }
+  .contact__email {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-family: var(--font-serif);
+    font-size: var(--step-2);
+    color: var(--ink);
+    word-break: break-all;
+  }
+  .contact__email:hover {
+    color: var(--accent-strong);
+    text-decoration: none;
+  }
+  .contact__hint {
+    margin-top: var(--space-3);
+    font-size: var(--step--1);
+  }
+  .contact__links ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+  .contact__links a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0.6rem 0.7rem;
+    margin-left: -0.7rem;
+    border-radius: var(--radius);
+    color: var(--ink);
+    transition: background var(--dur) var(--ease);
+  }
+  .contact__links a:hover {
+    background: var(--bg-subtle);
+    text-decoration: none;
+    color: var(--accent-strong);
+  }
+  .contact__ext {
+    color: var(--ink-faint);
+  }
+</style>

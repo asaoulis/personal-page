@@ -1,0 +1,142 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import { SITE } from '../config';
+
+// TODO: replace placeholder bio paragraphs and interests with real content.
+const interests = [
+  'Simulation-based / likelihood-free inference',
+  'Earthquake source physics & moment tensors',
+  'Neural data compression for physical sciences',
+  'Normalising flows & diffusion models',
+  'Uncertainty quantification & calibration',
+  'Probabilistic seismology',
+];
+---
+
+<BaseLayout title="About" description={`About ${SITE.title} — ${SITE.role}.`}>
+  <PageHeader
+    eyebrow="About"
+    title="Inference that scientists can trust"
+    lead="I build machine-learning methods that make expensive physical simulators usable for fast, well-calibrated scientific inference — and I care about getting the uncertainty right."
+  />
+
+  <section class="section">
+    <div class="container about">
+      <div class="about__media reveal">
+        <div class="about__photo" role="img" aria-label="Portrait placeholder">
+          <span>Photo</span>
+        </div>
+        <dl class="about__facts">
+          <div>
+            <dt>Role</dt>
+            <dd>{SITE.role}</dd>
+          </div>
+          <div>
+            <dt>Affiliation</dt>
+            <dd>{SITE.affiliation}</dd>
+          </div>
+          <div>
+            <dt>Based in</dt>
+            <dd>London, UK <span class="muted">(TODO)</span></dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="about__body prose reveal" data-delay="80ms">
+        <p>
+          {/* TODO: real bio. */}
+          I'm a computational seismologist and machine-learning researcher. My work centres on
+          <strong> simulation-based inference</strong> — training neural networks to perform fast, amortised
+          Bayesian inference for problems where the forward model is an expensive physics simulator and
+          the likelihood is intractable.
+        </p>
+        <p>
+          The flagship application is <strong>earthquake source characterisation</strong>: inferring
+          full moment-tensor posteriors directly from seismic waveforms, with calibrated uncertainty
+          that traditional point-estimate methods don't provide. The same toolkit — neural
+          compression, normalising flows, careful handling of nuisance parameters — generalises well
+          beyond seismology, and I'm actively extending it to cosmology and climate.
+        </p>
+        <p>
+          This site collects that work in one place, with a live, continuously-updating demo at its
+          centre. <span class="muted">(This bio is placeholder text — to be finalised.)</span>
+        </p>
+
+        <h2>Research interests</h2>
+        <ul class="about__interests">
+          {interests.map((it) => <li>{it}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .about {
+    display: grid;
+    grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+    gap: var(--space-8);
+    align-items: start;
+  }
+  .about__media {
+    position: sticky;
+    top: calc(var(--header-h) + var(--space-5));
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .about__photo {
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-lg);
+    border: 1px dashed var(--border-strong);
+    background:
+      radial-gradient(120% 80% at 50% 0%, var(--accent-tint), transparent 60%), var(--bg-subtle);
+    display: grid;
+    place-items: center;
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+  .about__facts {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+  }
+  .about__facts dt {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .about__facts dd {
+    margin: 0.1rem 0 0;
+    color: var(--ink);
+  }
+  .about__interests {
+    columns: 2;
+    column-gap: var(--space-5);
+    padding-left: 1.1rem;
+  }
+  .about__interests li {
+    margin-bottom: var(--space-2);
+    break-inside: avoid;
+  }
+
+  @media (max-width: 760px) {
+    .about {
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+    }
+    .about__media {
+      position: static;
+    }
+    .about__photo {
+      max-width: 14rem;
+    }
+    .about__interests {
+      columns: 1;
+    }
+  }
+</style>
