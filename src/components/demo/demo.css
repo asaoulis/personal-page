@@ -19,7 +19,9 @@
   box-shadow: var(--shadow-sm);
   min-height: 540px;
 }
-.demo-map {
+/* Higher specificity than maplibre's own `.maplibregl-map { position: relative }` (which it adds
+   to this container and which would otherwise win on source order, collapsing it to 0 height). */
+.demo-stage .demo-map {
   position: absolute;
   inset: 0;
 }
