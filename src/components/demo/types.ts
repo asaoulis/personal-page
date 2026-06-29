@@ -17,6 +17,7 @@ export interface EventSummaryProps {
   dip: number;
   rake: number;
   mw: number | null; // solution moment magnitude (from the primary reference / model), if known
+  p_outside_dc_box: number | null; // posterior prob. outside the ±10° near-DC lune box (non-DC metric)
   primary_source: string; // catalogue source of the primary reference
   primary_kagan_deg: number | null; // Kagan angle model vs primary reference
   n_references: number;
@@ -70,6 +71,7 @@ export interface EventRecord {
   dip: number;
   rake: number;
   mw: number | null;
+  p_outside_dc_box: number | null;
   posterior: {
     gamma: number[];
     delta: number[];

@@ -3,22 +3,18 @@ import './demo.css';
 import MapView from './MapView';
 import EventPanel from './EventPanel';
 import RangeSlider from './RangeSlider';
-import { type EventIndex, sourceColor } from './types';
+import { type EventIndex, markerSize } from './types';
+import { type ColorMode, COLOR_MODES } from './coloring';
 
 const DATA_URL = `${import.meta.env.BASE_URL}demo/events.json`;
-
-const LEGEND = [
-  { label: 'Double-couple', type: 'double-couple' },
-  { label: 'Strike-slip', type: 'strike-slip' },
-  { label: 'CLVD-leaning', type: 'clvd' },
-  { label: 'Volcanic / −ISO', type: 'volcanic / -iso' },
-];
+const MAG_LEGEND = [4.0, 5.0, 6.0];
 
 export default function DemoViewer() {
   const [coll, setColl] = useState<EventIndex | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [range, setRange] = useState<[number, number] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [colorMode, setColorMode] = useState<ColorMode>('dc');
 
   useEffect(() => {
     let alive = true;
@@ -70,6 +66,7 @@ export default function DemoViewer() {
   }, [visible, coll]);
 
   const selected = visible.find((f) => f.properties.id === selectedId) ?? null;
+  const legend = COLOR_MODES.find((m) => m.id === colorMode)!;
 
   if (error) {
     return (
@@ -85,7 +82,12 @@ export default function DemoViewer() {
     <div className="demo-app">
       <div className="demo-stage">
         {coll ? (
-          <MapView events={visible} selectedId={selectedId} onSelect={setSelectedId} />
+          <MapView
+            events={visible}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            colorMode={colorMode}
+          />
         ) : (
           <div className="demo-skeleton">Loading map…</div>
         )}
@@ -93,17 +95,45 @@ export default function DemoViewer() {
           Demo preview — real F-net catalogue (Jan 2026), illustrative posteriors; live feed coming
           soon
         </div>
-        <div className="demo-legend" aria-hidden="true">
-          {LEGEND.map((l) => (
-            <div className="demo-legend__row" key={l.type}>
-              <span className="demo-legend__dot" style={{ background: sourceColor(l.type) }} />
-              {l.label}
-            </div>
-          ))}
+
+        <div className="demo-legend">
+          <label className="demo-legend__control">
+            <span>Colour by</span>
+            <select
+              value={colorMode}
+              onChange={(e) => setColorMode(e.target.value as ColorMode)}
+              aria-label="Colour markers by"
+            >
+              {COLOR_MODES.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="demo-legend__rows">
+            {legend.legend.map((l) => (
+              <div className="demo-legend__row" key={l.label}>
+                <span className="demo-legend__dot" style={{ background: l.color }} />
+                {l.label}
+              </div>
+            ))}
+          </div>
+          <div className="demo-legend__sizes" aria-label="Marker size shows magnitude">
+            {MAG_LEGEND.map((m) => (
+              <div className="demo-legend__size" key={m}>
+                <span
+                  className="demo-legend__sizedot"
+                  style={{ width: markerSize(m), height: markerSize(m) }}
+                />
+                <span className="demo-legend__sizelabel">M{m.toFixed(1)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <EventPanel feature={selected} />
+      <EventPanel feature={selected} colorMode={colorMode} />
 
       {coll && (
         <RangeSlider

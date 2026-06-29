@@ -1,4 +1,5 @@
-import { type EventFeature, sourceColor, markerSize } from './types';
+import { type EventFeature, markerSize } from './types';
+import { type ColorMode, markerColor } from './coloring';
 
 /**
  * Lightweight SVG fallback for the interactive map, used when the browser lacks WebGL2
@@ -10,6 +11,7 @@ interface Props {
   events: EventFeature[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  colorMode: ColorMode;
 }
 
 // Frame the Japanese main arc.
@@ -29,7 +31,7 @@ function project(lon: number, lat: number): [number, number] {
 const LON_LINES = [130, 135, 140, 145];
 const LAT_LINES = [30, 35, 40, 45];
 
-export default function FallbackMap({ events, selectedId, onSelect }: Props) {
+export default function FallbackMap({ events, selectedId, onSelect, colorMode }: Props) {
   return (
     <div className="demo-fallbackmap">
       <svg
@@ -69,11 +71,12 @@ export default function FallbackMap({ events, selectedId, onSelect }: Props) {
           const [x, y] = project(f.geometry.coordinates[0], f.geometry.coordinates[1]);
           const r = markerSize(f.properties.mag) / 2;
           const sel = f.properties.id === selectedId;
+          const col = markerColor(f.properties, colorMode);
           return (
             <g key={f.properties.id} transform={`translate(${x},${y})`}>
               <circle
                 r={r}
-                fill={sourceColor(f.properties.source_type)}
+                fill={col}
                 stroke="#fff"
                 strokeWidth={sel ? 3 : 1.5}
                 style={{ cursor: 'pointer' }}
@@ -86,14 +89,7 @@ export default function FallbackMap({ events, selectedId, onSelect }: Props) {
                   M{f.properties.mag} — {f.properties.region}
                 </title>
               </circle>
-              {sel && (
-                <circle
-                  r={r + 4}
-                  fill="none"
-                  stroke={sourceColor(f.properties.source_type)}
-                  strokeWidth={2}
-                />
-              )}
+              {sel && <circle r={r + 4} fill="none" stroke={col} strokeWidth={2} />}
             </g>
           );
         })}

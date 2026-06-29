@@ -8,6 +8,9 @@
     'controls controls';
   gap: var(--space-4);
   margin-block: var(--space-5);
+  /* Items keep their own height (don't stretch) so the map area is a FIXED size, independent of
+     the panel's content — otherwise panel reflow resizes the map and the markers jump. */
+  align-items: start;
 }
 
 .demo-stage {
@@ -17,7 +20,7 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  min-height: 540px;
+  height: 600px;
 }
 /* Higher specificity than maplibre's own `.maplibregl-map { position: relative }` (which it adds
    to this container and which would otherwise win on source order, collapsing it to 0 height). */
@@ -125,14 +128,40 @@
   bottom: var(--space-3);
   left: var(--space-3);
   display: grid;
-  gap: 0.3rem;
+  gap: 0.5rem;
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--paper) 90%, transparent);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: blur(6px);
   border: 1px solid var(--border);
   font-size: 0.72rem;
   color: var(--ink-soft);
+  max-width: 15rem;
+}
+.demo-legend__control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.66rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.demo-legend__control select {
+  font: inherit;
+  font-size: 0.76rem;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+.demo-legend__rows {
+  display: grid;
+  gap: 0.28rem;
 }
 .demo-legend__row {
   display: flex;
@@ -140,11 +169,36 @@
   gap: 0.45rem;
 }
 .demo-legend__dot {
+  flex: none;
   width: 0.7rem;
   height: 0.7rem;
   border-radius: 999px;
   border: 1.5px solid white;
   box-shadow: 0 0 0 1px var(--border-strong);
+}
+.demo-legend__sizes {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.7rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border);
+}
+.demo-legend__size {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.18rem;
+}
+.demo-legend__sizedot {
+  display: block;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink-faint);
+  background: color-mix(in srgb, var(--ink-faint) 12%, transparent);
+}
+.demo-legend__sizelabel {
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
 }
 
 /* event markers */
@@ -182,6 +236,9 @@
   background: var(--paper);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  /* Match the (fixed) map height and scroll internally, so selecting an event never resizes the
+     grid row (which would jump the markers + the slider below). */
+  max-height: 600px;
 }
 .demo-panel__empty {
   margin: auto;
@@ -229,6 +286,8 @@
   display: grid;
   gap: var(--space-4);
   overflow-y: auto;
+  flex: 1;
+  min-height: 0; /* allow the body to scroll within the fixed-height panel */
 }
 .demo-figs {
   display: grid;
@@ -508,6 +567,10 @@
       'panel';
   }
   .demo-stage {
+    height: auto;
     min-height: 60vh;
+  }
+  .demo-panel {
+    max-height: none; /* stacked layout — let the panel take its natural height */
   }
 }

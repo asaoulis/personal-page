@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { type EventFeature, sourceColor, markerSize } from './types';
+import { type EventFeature, markerSize } from './types';
+import { type ColorMode, markerColor } from './coloring';
 import FallbackMap from './FallbackMap';
 
 interface Props {
   events: EventFeature[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  colorMode: ColorMode;
 }
 
 // Keyless, registration-free vector tiles (OpenFreeMap "positron" = light).
@@ -24,7 +26,7 @@ function hasWebGL2(): boolean {
   }
 }
 
-export default function MapView({ events, selectedId, onSelect }: Props) {
+export default function MapView({ events, selectedId, onSelect, colorMode }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<Map<string, { marker: maplibregl.Marker; el: HTMLButtonElement }>>(
@@ -62,8 +64,6 @@ export default function MapView({ events, selectedId, onSelect }: Props) {
     console.info(
       `[demo-map] init: webgl2=${supported} container=${Math.round(rect.width)}x${Math.round(rect.height)} style=${STYLE_URL}`,
     );
-    // If the style/tiles never load (provider down, blocked, CORS…), fall back so the demo
-    // still shows the interactive scatter instead of a silent blank map.
     const loadTimer = setTimeout(() => {
       if (!readyRef.current) {
         console.warn('[demo-map] style load timed out (~10s) — using fallback scatter map.');
@@ -80,7 +80,6 @@ export default function MapView({ events, selectedId, onSelect }: Props) {
         `[demo-map] loaded ok: ${Math.round(r?.width ?? 0)}x${Math.round(r?.height ?? 0)}`,
       );
       syncMarkers();
-      applySelection();
     });
     map.on('error', (e) => {
       const msg = (e && (e.error?.message || String(e.error || ''))) || 'unknown';
@@ -88,8 +87,7 @@ export default function MapView({ events, selectedId, onSelect }: Props) {
     });
     mapRef.current = map;
 
-    // Robustness: if the container is laid out / resized after the map is created (a common cause
-    // of a "loads but blank" map — canvas measured at 0px), keep the GL canvas in sync.
+    // Keep the GL canvas sized to its container (a common cause of a "loads but blank" map).
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(containerRef.current);
     const kick = setTimeout(() => map.resize(), 400);
@@ -121,12 +119,11 @@ export default function MapView({ events, selectedId, onSelect }: Props) {
       }
     }
     for (const f of events) {
-      const { id, mag, region, source_type } = f.properties;
+      const { id, mag, region } = f.properties;
       if (store.has(id)) continue;
       const el = document.createElement('button');
       el.className = 'eq-marker';
       el.style.setProperty('--size', `${markerSize(mag)}px`);
-      el.style.setProperty('--mk-color', sourceColor(source_type));
       el.setAttribute('aria-label', `M${mag} — ${region}`);
       el.setAttribute('title', `M${mag} — ${region}`);
       el.addEventListener('click', (e) => {
@@ -137,6 +134,16 @@ export default function MapView({ events, selectedId, onSelect }: Props) {
         .setLngLat(f.geometry.coordinates)
         .addTo(map);
       store.set(id, { marker, el });
+    }
+    applyColors();
+    applySelection();
+  }
+
+  // Marker colour follows the selected colour mode.
+  function applyColors() {
+    for (const f of events) {
+      const m = markersRef.current.get(f.properties.id);
+      if (m) m.el.style.setProperty('--mk-color', markerColor(f.properties, colorMode));
     }
   }
 
@@ -150,24 +157,29 @@ export default function MapView({ events, selectedId, onSelect }: Props) {
   }
 
   useEffect(() => {
-    if (useFallback) return;
-    syncMarkers();
-    applySelection();
+    if (!useFallback) syncMarkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, useFallback]);
 
   useEffect(() => {
-    if (useFallback) return;
-    applySelection();
-    const map = mapRef.current;
-    if (!map || !selectedId) return;
-    const f = events.find((e) => e.properties.id === selectedId);
-    if (f) map.easeTo({ center: f.geometry.coordinates, duration: 600 });
+    if (!useFallback) applyColors();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, useFallback]);
+  }, [colorMode]);
+
+  useEffect(() => {
+    if (!useFallback) applySelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
   if (useFallback) {
-    return <FallbackMap events={events} selectedId={selectedId} onSelect={onSelect} />;
+    return (
+      <FallbackMap
+        events={events}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        colorMode={colorMode}
+      />
+    );
   }
   return (
     <>

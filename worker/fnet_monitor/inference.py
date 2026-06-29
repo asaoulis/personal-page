@@ -110,6 +110,9 @@ def mock_posterior(ev: "QuakeEvent", n: int, rng: np.random.Generator | None = N
 
     mt6 = _mt6_ensemble(strike, dip, rake, min(n, N_MT6), r)
 
+    # non-DC exclusion metric (τ=10°), same definition as synthetic.synthetic_posterior.
+    p_outside = float(np.mean((np.abs(gamma) >= 10.0) | (np.abs(delta) >= 10.0)))
+
     # A mock catalogue reference solution near the posterior mean.
     ref_gamma = float(np.clip(gc + r.normal(0, 2.5), GAMMA_MIN, GAMMA_MAX))
     ref_delta = float(np.clip(dc + r.normal(0, 4.0), DELTA_MIN, DELTA_MAX))
@@ -125,6 +128,7 @@ def mock_posterior(ev: "QuakeEvent", n: int, rng: np.random.Generator | None = N
         "rake": round(rake, 1),
         "source_type": source_type,
         "mw": mw,
+        "p_outside_dc_box": round(p_outside, 3),
         "gamma_mean": round(float(gamma.mean()), 2),
         "delta_mean": round(float(delta.mean()), 2),
         "posterior": {

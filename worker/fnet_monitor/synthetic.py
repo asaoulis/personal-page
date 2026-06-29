@@ -25,13 +25,64 @@ from .inference import classify_source_type
 
 GAMMA_MIN, GAMMA_MAX = -30.0, 30.0
 DELTA_MIN, DELTA_MAX = -90.0, 90.0
+DC_BOX_TAU = 10.0  # near-DC lune box half-width for the non-DC exclusion metric
 
 
 def _mw_spread_frac(mw: float) -> float:
-    """Posterior width as a fraction of ‖M‖, larger for smaller magnitudes."""
+    """Posterior width as a fraction of ‖M‖, larger for smaller magnitudes — informative like an
+    NPE posterior, not artificially tight."""
     import numpy as np
 
-    return float(np.clip(0.06 + 0.06 * (5.5 - min(mw, 5.5)), 0.06, 0.32))
+    return float(np.clip(0.045 + 0.05 * (5.5 - min(mw, 5.5)), 0.045, 0.22))
+
+
+def _use_m6_to_matrix(m6):
+    import numpy as np
+
+    Mrr, Mtt, Mpp, Mrt, Mrp, Mtp = m6
+    return np.array([[Mrr, Mrt, Mrp], [Mrt, Mtt, Mtp], [Mrp, Mtp, Mpp]])
+
+
+def _matrix_to_use_m6(M):
+    return [M[0, 0], M[1, 1], M[2, 2], M[0, 1], M[0, 2], M[1, 2]]
+
+
+def _retype(ref_m6, lam_new):
+    """Return a unit m6 (USE) with the SAME orientation (eigenvectors) as ``ref_m6`` but the given
+    eigenvalues — i.e. the same fault geometry with a different source type (γ,δ). Keeps the Kagan
+    angle to the reference small (shared principal axes) while moving the lune position. Represents
+    the full-MT NPE resolving non-DC components the deviatoric-constrained F-net inversion sets to 0."""
+    import numpy as np
+
+    M = _use_m6_to_matrix(ref_m6)
+    w, V = np.linalg.eigh(M)
+    V = V[:, np.argsort(w)[::-1]]  # eigenvectors for descending eigenvalues
+    lam = np.array(sorted(lam_new, reverse=True))
+    Mnew = V @ np.diag(lam) @ V.T
+    m = np.array(_matrix_to_use_m6(Mnew), float)
+    n = np.linalg.norm(m)
+    return m / n if n else m
+
+
+def _model_truth(ref_m6, mw, rng):
+    """Model 'best' MT. Mostly near the reference (small DC offset); for a seeded ~18% minority,
+    a genuinely non-DC source type (moderate CLVD or ISO) so the demo's source-type / non-DC
+    colour modes are populated (illustrative — the real NPE replaces this)."""
+    import numpy as np
+
+    roll = rng.random()
+    if roll < 0.12:  # CLVD-leaning
+        a = rng.uniform(1.4, 2.0)
+        lam = [a, -(a - 1.0), -1.0]
+        if rng.random() < 0.5:
+            lam = [-x for x in lam]
+        return _retype(ref_m6, lam)
+    if roll < 0.18:  # isotropic-leaning (±ISO) — DC + a net trace
+        iso = rng.choice([-1.0, 1.0]) * rng.uniform(0.45, 0.85)
+        return _retype(ref_m6, [1.0 + iso, iso, -1.0 + iso])
+    best = ref_m6 + rng.normal(0, 0.04, size=6)
+    n = np.linalg.norm(best)
+    return best / n if n else best
 
 
 def synthetic_posterior(
@@ -56,9 +107,8 @@ def synthetic_posterior(
     ref_m6 = ref_m6 / (np.linalg.norm(ref_m6) or 1.0)
     mw = primary.get("mw") or float(ev.mag) or 4.0
 
-    # Model best = primary reference nudged by a small seeded offset (realistic inversion gap).
-    best = ref_m6 + r.normal(0, 0.04, size=6)
-    best = best / (np.linalg.norm(best) or 1.0)
+    # Model best: near the reference, or (seeded minority) a genuinely non-DC source type.
+    best = _model_truth(ref_m6, mw, r)
 
     sigma = _mw_spread_frac(mw)  # ref_m6 is unit-norm, so sigma is a direct fraction
     cloud = best + r.normal(0, sigma, size=(n_cloud, 6))
@@ -68,6 +118,10 @@ def synthetic_posterior(
 
     mt6_ens = best + r.normal(0, sigma, size=(n_mt6, 6))
     mt6_ens = mt6_ens / np.linalg.norm(mt6_ens, axis=1, keepdims=True)
+
+    # Headline non-DC metric: posterior probability the source is OUTSIDE the near-DC lune box
+    # |γ|<τ & |δ|<τ (τ=10°), matching the santorini uncertainty_metrics.prob_outside_dc_box.
+    p_outside = float(np.mean((np.abs(g) >= DC_BOX_TAU) | (np.abs(d) >= DC_BOX_TAU)))
 
     best_mt = pyrocko_mt(best.tolist())
     s, dip, rake = (float(x) for x in best_mt.both_strike_dip_rake()[0])
@@ -97,6 +151,7 @@ def synthetic_posterior(
         "rake": round(rake, 1),
         "source_type": source_type,
         "mw": round(float(mw), 1),
+        "p_outside_dc_box": round(p_outside, 3),
         "gamma_mean": round(gamma_mean, 2),
         "delta_mean": round(delta_mean, 2),
         "posterior": {

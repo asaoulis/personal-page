@@ -2,16 +2,12 @@ import { useEffect, useState } from 'react';
 import Lune from './Lune';
 import Beachball from './Beachball';
 import { MarkerShape, referenceColor } from './markers';
-import {
-  type EventFeature,
-  type EventRecord,
-  type Reference,
-  referenceMarker,
-  sourceColor,
-} from './types';
+import { type ColorMode, markerColor } from './coloring';
+import { type EventFeature, type EventRecord, type Reference, referenceMarker } from './types';
 
 interface Props {
   feature: EventFeature | null;
+  colorMode: ColorMode;
 }
 
 function fmtTime(iso: string): string {
@@ -44,7 +40,7 @@ function refLabel(source: string): string {
   return source;
 }
 
-export default function EventPanel({ feature }: Props) {
+export default function EventPanel({ feature, colorMode }: Props) {
   const [record, setRecord] = useState<EventRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -76,7 +72,7 @@ export default function EventPanel({ feature }: Props) {
 
   const p = feature.properties;
   const [lon, lat] = feature.geometry.coordinates;
-  const col = sourceColor(p.source_type);
+  const col = markerColor(p, colorMode);
   const refs: Reference[] = record?.references ?? [];
 
   return (
