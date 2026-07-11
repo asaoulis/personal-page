@@ -166,7 +166,8 @@ class GitBranchStore(FileStore):
     # What must NEVER land on the public data branch: `_work/` holds raw downloaded
     # waveforms (NIED-licensed — not redistributable) kept for failure debugging;
     # `_excluded/` and state backups are internal store maintenance artefacts.
-    PUBLISH_EXCLUDES = ("_work/", "_excluded/", "state.json.bak*", ".gitignore")
+    PUBLISH_EXCLUDES = ("_work/", "_excluded/", "state.json.bak*", ".gitignore",
+                        "daemon.log", "daemon.pid")
 
     # Written INTO the data branch: Vercel reads vercel.json from the branch it is
     # deploying, so the main-branch `git.deploymentEnabled.data: false` never applies
