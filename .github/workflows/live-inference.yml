@@ -76,7 +76,13 @@ jobs:
       - name: Install python deps
         run: |
           pip install torch==2.0.0 --index-url https://download.pytorch.org/whl/cpu
-          pip install -r worker/requirements-inference.txt
+          # instaseis is installed SEPARATELY with --no-build-isolation: under pip's isolated
+          # build env its numpy.distutils Fortran build loses module ordering (compiles
+          # finite_elem_mapping.f90 before global_parameters.f90 -> "Cannot open module file").
+          # Building against the already-installed pinned numpy orders the modules correctly.
+          grep -v "^instaseis" worker/requirements-inference.txt > /tmp/reqs-noinsta.txt
+          pip install -r /tmp/reqs-noinsta.txt
+          pip install --no-build-isolation "$(grep -o 'instaseis==[0-9.]*' worker/requirements-inference.txt)"
           # seismo-sbi at a PINNED rev, curated deps above (its requirements.txt is stale)
           pip install --no-deps "git+https://github.com/asaoulis/seismo-sbi@${SEISMO_SBI_REV}"
         env:
@@ -110,7 +116,9 @@ jobs:
         run: python -m fnet_monitor.monitor --once --out ../_data
 
       - name: Publish to the data branch
-        if: ${{ inputs.publish }}
+        # Scheduled (cron) ticks ALWAYS publish — that is the live channel; manual
+        # dispatches publish only when the input asks (smoke runs stay side-effect-free).
+        if: ${{ github.event_name == 'schedule' || inputs.publish }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

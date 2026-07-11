@@ -1,4 +1,9 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "data": false
+    }
+  },
   "rewrites": [
     {
       "source": "/live-data/:path*",

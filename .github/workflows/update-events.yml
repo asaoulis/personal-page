@@ -4,9 +4,9 @@ name: update-events
 # (MOCK for now — real NPE is M-D2), and publishes the v2 contract to the `data`
 # branch the frontend reads. Cron is BEST-EFFORT (see docs/ARCHITECTURE.md §6.5):
 # it can run late or be skipped; trigger manually via workflow_dispatch if needed.
+# RETIRED 2026-07-11: superseded by live-inference.yml (real NPE). The cron is removed so
+# this mock can never clobber the real store on the `data` branch; dispatch kept for archaeology.
 on:
-  schedule:
-    - cron: '*/30 * * * *' # every ~30 min (loose); 30-min cadence is comfortable (§6.7)
   workflow_dispatch: {}
 
 permissions:
