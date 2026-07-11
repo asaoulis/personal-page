@@ -28,7 +28,9 @@ if [ -f "$STORE/daemon.pid" ] && kill -0 "$(cat "$STORE/daemon.pid")" 2>/dev/nul
 fi
 
 cd "$WORKER_DIR"
-setsid nohup conda run -n seismo-sbi python -m fnet_monitor.monitor \
+# --no-capture-output is REQUIRED: plain `conda run` buffers stdout until process
+# exit, and a --loop daemon never exits -> daemon.log would stay empty forever.
+setsid nohup conda run --no-capture-output -n seismo-sbi python -m fnet_monitor.monitor \
     --loop --interval "$INTERVAL" --publish --out "$STORE" \
     >> "$STORE/daemon.log" 2>&1 &
 echo $! > "$STORE/daemon.pid"
