@@ -1,0 +1,124 @@
+name: live-inference
+
+# REAL NPE inference worker (replaces the mock update-events.yml once enabled).
+# Each run is ONE state-machine tick: restore state from the `data` branch,
+# poll the F-net MT catalogue, advance every pending event one step
+# (download ~23 min of waveforms -> h5 -> NPE inference + QA -> schema-3),
+# publish the store back to the `data` branch. Resumable by design: a late,
+# skipped, or failed run only delays publication (cron is BEST-EFFORT).
+#
+# DISABLED BY DEFAULT: workflow_dispatch only until go-live is authorized.
+# To go live: uncomment the schedule block AND disable update-events.yml.
+
+on:
+  # schedule:
+  #   - cron: '*/30 * * * *'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Force-push the result store to the data branch"
+        type: boolean
+        default: false
+      backfill_start:
+        description: "Optional ISO date to widen the poll window (backfill)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-inference
+  cancel-in-progress: false
+
+env:
+  ASSETS: /home/runner/fnet_assets
+  ASSETS_TAG: assets-v1
+
+jobs:
+  tick:
+    # ubuntu-22.04 (not -latest): the pinned python 3.8 env (matching the proven
+    # local conda env) is unavailable on 24.04 images.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout worker code (main)
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+          cache: pip
+          cache-dependency-path: worker/requirements-inference.txt
+
+      - name: Cache model + DB assets
+        id: assets-cache
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/fnet_assets
+          key: fnet-assets-${{ env.ASSETS_TAG }}
+
+      - name: Download release assets (cache miss only)
+        if: steps.assets-cache.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$ASSETS" && cd "$ASSETS"
+          for a in japan10s_fiducial japan_v1_ckpt ci_config win32tools; do
+            gh release download "$ASSETS_TAG" -R "$GITHUB_REPOSITORY" -p "$a.tar.gz"
+            tar xzf "$a.tar.gz" && rm "$a.tar.gz"
+          done
+          ls -la "$ASSETS"
+
+      - name: Install system deps (gfortran for instaseis build)
+        run: sudo apt-get update -q && sudo apt-get install -y -q gfortran
+
+      - name: Install python deps
+        run: |
+          pip install torch==2.0.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r worker/requirements-inference.txt
+          # seismo-sbi at a PINNED rev, curated deps above (its requirements.txt is stale)
+          pip install --no-deps "git+https://github.com/asaoulis/seismo-sbi@${SEISMO_SBI_REV}"
+        env:
+          # The pushed public-lib-refactor commit the worker was tested against (pinned at go-live).
+          SEISMO_SBI_REV: 9e44eefeb026c7d791ec7b73bba2e4cc485f70fb
+
+      - name: Put WIN32 tools on PATH
+        run: |
+          chmod +x "$ASSETS"/win32tools/win2sac.src/win2sac_32 "$ASSETS"/win32tools/catwin32.src/catwin32 || true
+          echo "$ASSETS/win32tools/win2sac.src" >> "$GITHUB_PATH"
+          echo "$ASSETS/win32tools/catwin32.src" >> "$GITHUB_PATH"
+
+      - name: Seed previous results + state from the data branch
+        run: |
+          mkdir -p _data
+          if git ls-remote --exit-code --heads origin data >/dev/null 2>&1; then
+            git fetch --depth=1 origin data
+            git archive FETCH_HEAD | tar -x -C _data
+          fi
+
+      - name: Run one monitor tick (real NPE inference)
+        working-directory: worker
+        env:
+          FNET_USERNAME: ${{ secrets.FNET_USERNAME }}
+          FNET_PASSWORD: ${{ secrets.FNET_PASSWORD }}
+          FNET_ASSETS: /home/runner/fnet_assets
+          FNET_CONFIG: /home/runner/fnet_assets/config/first_ml_npe_japan_ci.yaml
+          FNET_CKPT: /home/runner/fnet_assets/japan_v1
+          BACKFILL_START: ${{ inputs.backfill_start }}
+        # Entry point lands with the Phase-3 monitor module:
+        run: python -m fnet_monitor.monitor --once --out ../_data
+
+      - name: Publish to the data branch
+        if: ${{ inputs.publish }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd _data
+          rm -rf .git
+          git init -q -b data
+          git config user.name "fnet-bot"
+          git config user.email "fnet-bot@users.noreply.github.com"
+          git add -A
+          git commit -q -m "events: $(date -u +%FT%TZ)" || { echo "no changes"; exit 0; }
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
