@@ -114,6 +114,7 @@ jobs:
           FNET_ASSETS: /home/runner/fnet_assets
           FNET_CONFIG: /home/runner/fnet_assets/config/first_ml_npe_japan_ci.yaml
           FNET_CKPT: /home/runner/fnet_assets/japan_v1
+          FNET_STATIONS_FILE: /home/runner/fnet_assets/config/fnet_demo_stations.txt
           BACKFILL_START: ${{ inputs.backfill_start }}
         # Entry point lands with the Phase-3 monitor module:
         run: python -m fnet_monitor.monitor --once --out ../_data
