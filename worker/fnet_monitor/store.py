@@ -168,12 +168,21 @@ class GitBranchStore(FileStore):
     # `_excluded/` and state backups are internal store maintenance artefacts.
     PUBLISH_EXCLUDES = ("_work/", "_excluded/", "state.json.bak*", ".gitignore")
 
+    # Written INTO the data branch: Vercel reads vercel.json from the branch it is
+    # deploying, so the main-branch `git.deploymentEnabled.data: false` never applies
+    # here — without this file EVERY store publish triggers a doomed "astro build"
+    # preview deploy (the data branch has no site) and a failure email.
+    VERCEL_NO_DEPLOY = '{\n  "git": { "deploymentEnabled": false },\n  "github": { "enabled": false }\n}\n'
+
     @classmethod
     def write_publish_gitignore(cls, out_dir) -> str:
-        """Write the publish-exclusion `.gitignore` into ``out_dir`` (idempotent).
+        """Write the publish-exclusion `.gitignore` + no-deploy `vercel.json` into
+        ``out_dir`` (idempotent).
 
         Shared by :meth:`_push` and the CI workflow's own publish step so both
-        channels exclude the same internals from the public branch."""
+        channels produce identical data-branch guard files."""
+        with open(os.path.join(str(out_dir), "vercel.json"), "w") as f:
+            f.write(cls.VERCEL_NO_DEPLOY)
         p = os.path.join(str(out_dir), ".gitignore")
         with open(p, "w") as f:
             f.write("\n".join(cls.PUBLISH_EXCLUDES) + "\n")

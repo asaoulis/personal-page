@@ -134,6 +134,9 @@ jobs:
           # NEVER publish raw waveform work dirs (NIED-licensed) or store internals.
           # Keep in lockstep with GitBranchStore.PUBLISH_EXCLUDES (worker/fnet_monitor/store.py).
           printf '_work/\n_excluded/\nstate.json.bak*\n.gitignore\n' > .gitignore
+          # Vercel reads vercel.json from the DEPLOYED branch: without this, every
+          # data push triggers a doomed preview deploy + failure email.
+          printf '{\n  "git": { "deploymentEnabled": false },\n  "github": { "enabled": false }\n}\n' > vercel.json
           git add -A
           git commit -q -m "events: $(date -u +%FT%TZ)" || { echo "no changes"; exit 0; }
           git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
