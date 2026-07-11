@@ -520,6 +520,21 @@
   font-weight: 400;
   color: var(--ink-faint);
 }
+.demo-refs__badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: var(--step--1);
+  font-weight: 600;
+}
+.demo-refs__pendingnote {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  max-width: 34rem;
+}
 .demo-refs__row {
   display: flex;
   flex-wrap: wrap;

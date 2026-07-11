@@ -2,6 +2,19 @@
  * Shared shape between the worker output and this frontend. Keep in lockstep with
  * `worker/fnet_monitor/contract.py` (SCHEMA_VERSION = 3). */
 
+/** Probabilistic source-type block (lune-box exclusion metric): the label claims non-DC
+ * ONLY when >=95% of the posterior lies outside the +/-10 deg near-DC lune box, otherwise
+ * "DC-consistent". Older bundled snapshots carry a plain string instead. */
+export interface SourceTypeBlock {
+  p_outside_dc_box_10: number; // posterior P(outside the +/-10 deg near-DC lune box)
+  label: string; // "DC-consistent" | "non-DC (+ISO|-ISO|+CLVD|-CLVD)"
+}
+export type SourceType = string | SourceTypeBlock;
+
+export function sourceTypeLabel(st: SourceType): string {
+  return typeof st === 'string' ? st : st.label;
+}
+
 /** A summary feature in the `events.json` index (drives the map + slider). */
 export interface EventSummaryProps {
   id: string;
@@ -10,7 +23,7 @@ export interface EventSummaryProps {
   magType: string;
   depth_km: number;
   region: string;
-  source_type: string;
+  source_type: SourceType;
   gamma: number; // posterior-mean lune coords
   delta: number;
   strike: number;
@@ -18,7 +31,7 @@ export interface EventSummaryProps {
   rake: number;
   mw: number | null; // solution moment magnitude (from the primary reference / model), if known
   p_outside_dc_box: number | null; // posterior prob. outside the ±10° near-DC lune box (non-DC metric)
-  primary_source: string; // catalogue source of the primary reference
+  primary_source: string; // catalogue source of the primary reference ("pending" when none yet)
   primary_kagan_deg: number | null; // Kagan angle model vs primary reference
   n_references: number;
   ensemble: string; // relative path to the per-event record, e.g. "events/<id>.json"
@@ -66,7 +79,7 @@ export interface EventRecord {
   lon: number;
   lat: number;
   region: string;
-  source_type: string;
+  source_type: SourceType;
   strike: number;
   dip: number;
   rake: number;
@@ -78,13 +91,15 @@ export interface EventRecord {
     mt6: number[][]; // downsampled MT ensemble (USE) — drives the fuzzy beachball
   };
   summary: { gamma: number; delta: number };
-  references: Reference[]; // primary first
+  /** Primary first. MAY BE EMPTY: a USGS-discovered event is published within ~1 h with the
+   * F-net reference PENDING (the record is replaced when NIED publishes the F-net MT). */
+  references: Reference[];
   provenance: { generated: string; mock: boolean; model: string };
 }
 
 /** Marker colour by (coarse) source type. */
-export function sourceColor(sourceType: string): string {
-  const s = sourceType.toLowerCase();
+export function sourceColor(sourceType: SourceType): string {
+  const s = sourceTypeLabel(sourceType).toLowerCase();
   if (s.includes('strike')) return '#0f8a7e';
   if (s.includes('iso') || s.includes('volcan')) return '#b4452b';
   if (s.includes('clvd')) return '#d4801e';

@@ -6,8 +6,15 @@ import RangeSlider from './RangeSlider';
 import { type EventIndex, markerSize } from './types';
 import { type ColorMode, COLOR_MODES } from './coloring';
 
-const DATA_URL = `${import.meta.env.BASE_URL}demo/events.json`;
+// Live store, published to the `data` branch by the update-events cron and proxied
+// same-origin via the vercel.json rewrite. Falls back to the bundled snapshot under
+// public/demo/ when the rewrite isn't present (local `astro dev`) or the fetch fails
+// for any reason (bad status, network error, malformed JSON).
+const LIVE_BASE = '/live-data/';
+const BUNDLED_BASE = `${import.meta.env.BASE_URL}demo/`;
 const MAG_LEGEND = [4.0, 5.0, 6.0];
+
+type DataSource = 'live' | 'bundled';
 
 export default function DemoViewer() {
   const [coll, setColl] = useState<EventIndex | null>(null);
@@ -15,20 +22,42 @@ export default function DemoViewer() {
   const [range, setRange] = useState<[number, number] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [colorMode, setColorMode] = useState<ColorMode>('dc');
+  const [dataBase, setDataBase] = useState<string>(BUNDLED_BASE);
+  const [dataSource, setDataSource] = useState<DataSource>('bundled');
 
   useEffect(() => {
     let alive = true;
-    fetch(DATA_URL)
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data: EventIndex) => {
+
+    async function fetchIndex(base: string): Promise<EventIndex> {
+      const r = await fetch(`${base}events.json`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    }
+
+    (async () => {
+      try {
+        const data = await fetchIndex(LIVE_BASE);
         if (!alive) return;
+        setDataBase(LIVE_BASE);
+        setDataSource('live');
         setColl(data);
         setRange([Date.parse(data.window_start), Date.parse(data.window_end)]);
-      })
-      .catch((e) => alive && setError(String(e)));
+        return;
+      } catch {
+        // Live store unreachable or malformed — fall back to the bundled snapshot.
+      }
+      try {
+        const data = await fetchIndex(BUNDLED_BASE);
+        if (!alive) return;
+        setDataBase(BUNDLED_BASE);
+        setDataSource('bundled');
+        setColl(data);
+        setRange([Date.parse(data.window_start), Date.parse(data.window_end)]);
+      } catch (e) {
+        if (alive) setError(String(e));
+      }
+    })();
+
     return () => {
       alive = false;
     };
@@ -92,8 +121,9 @@ export default function DemoViewer() {
           <div className="demo-skeleton">Loading map…</div>
         )}
         <div className="demo-banner">
-          Demo preview — real F-net catalogue (Jan 2026), illustrative posteriors; live feed coming
-          soon
+          {dataSource === 'live'
+            ? 'Live feed — F-net catalogue, updated automatically as new events are processed'
+            : 'Bundled preview snapshot — live feed unavailable, showing the static demo catalogue'}
         </div>
 
         <div className="demo-legend">
@@ -133,7 +163,7 @@ export default function DemoViewer() {
         </div>
       </div>
 
-      <EventPanel feature={selected} colorMode={colorMode} />
+      <EventPanel feature={selected} colorMode={colorMode} dataBase={dataBase} />
 
       {coll && (
         <RangeSlider

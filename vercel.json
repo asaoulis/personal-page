@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/live-data/:path*",
+      "destination": "https://raw.githubusercontent.com/asaoulis/personal-page/data/:path*"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ const pipeline = [
   {
     n: '01',
     t: 'Monitor',
-    d: 'A scheduled worker polls the earthquake catalogue (USGS / JMA / NIED F-net) for new events in the Japan region above ~M3.5.',
+    d: 'A scheduled worker polls two feeds: USGS origins for near-live discovery (minutes after an earthquake) and the NIED F-net moment-tensor catalogue for the authoritative reference solutions. Events outside the model’s training region or deeper than 80 km are filtered out.',
   },
   {
     n: '02',
@@ -46,13 +46,22 @@ const pipeline = [
   <section class="section how">
     <div class="container">
       <header class="section-head reveal">
-        <p class="eyebrow">How it will work</p>
+        <p class="eyebrow">How it works</p>
         <h2>A decoupled, precompute-first pipeline</h2>
         <p class="lead">
-          The interface above runs on the <strong>real F-net event catalogue</strong> (January 2026) with
-          reference moment tensors from F-net and USGS; the posterior clouds are illustrative until the
-          trained estimator is wired in. The live system follows a deliberately simple, low-cost architecture
-          — described in full in the project's architecture document.
+          The interface above runs on the <strong>real Japan earthquake feed</strong>; the posterior
+          clouds are sampled from the trained neural posterior estimator (NPE) for Japan F-net events,
+          covering June 2026 onward. Freshness is two-tier: new events are discovered from
+          <strong>USGS origins and inferred within about an hour</strong> of the earthquake (marked
+          “F-net reference pending”), and when NIED publishes its F-net moment-tensor solution —
+          typically days to a few weeks later — the event is re-inferred with the refined JMA location
+          and the F-net reference attached for comparison. The pipeline itself processes each event in
+          about two minutes, following a deliberately simple, low-cost architecture — described in full
+          in the project's architecture document. Source-type labels are probabilistic: an event is
+          only called non-double-couple when &gt;95% of its posterior mass falls outside a ±10°
+          region around pure double-couple on the source-type lune — and for smaller earthquakes even
+          these isotropic/CLVD indications are model-derived and cannot be checked against the F-net
+          reference, which is constrained to be purely deviatoric.
         </p>
       </header>
 
@@ -75,9 +84,9 @@ const pipeline = [
           inversions — the web demo simply serves what the inference pipeline already produces.
         </p>
         <p class="muted">
-          Prerequisites for going live: a trained F-net neural posterior estimator, a Japan-region
-          Green's-function database, and periodic F-net data access. These are tracked in the
-          roadmap, not in this preview.
+          The scheduled worker, trained NPE and Japan-region Green's-function database are all live;
+          if the feed is ever unreachable the viewer falls back to a bundled preview snapshot so the
+          page still renders.
         </p>
       </div>
     </div>

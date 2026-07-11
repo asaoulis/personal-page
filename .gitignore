@@ -33,3 +33,11 @@ __pycache__/
 .pytest_cache/
 .vercel
 .env*
+
+# HinetPy / F-net download intermediates (raw win32 chunks + channel tables).
+# The fetch_fnet.py adapter routes these to a /data scratch dir, but a manual run
+# launched from the repo root would otherwise leave them here. Never commit them.
+*.cnt
+*.ch
+*.euc.ch
+public/live-data/

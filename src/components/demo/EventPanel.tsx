@@ -3,11 +3,21 @@ import Lune from './Lune';
 import Beachball from './Beachball';
 import { MarkerShape, referenceColor } from './markers';
 import { type ColorMode, markerColor } from './coloring';
-import { type EventFeature, type EventRecord, type Reference, referenceMarker } from './types';
+import {
+  type EventFeature,
+  type EventRecord,
+  type Reference,
+  referenceMarker,
+  sourceTypeLabel,
+} from './types';
 
 interface Props {
   feature: EventFeature | null;
   colorMode: ColorMode;
+  /** Base URL the index was successfully loaded from (live or bundled) — per-event
+   * records must be fetched from the same source, since a live-only record may not
+   * exist in the bundled fallback. */
+  dataBase: string;
 }
 
 function fmtTime(iso: string): string {
@@ -16,8 +26,6 @@ function fmtTime(iso: string): string {
     d.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC'
   );
 }
-
-const DATA_BASE = `${import.meta.env.BASE_URL}demo/`;
 
 /** A tiny inline source glyph (matches the lune markers + the map). */
 function RefGlyph({ source }: { source: string }) {
@@ -40,7 +48,7 @@ function refLabel(source: string): string {
   return source;
 }
 
-export default function EventPanel({ feature, colorMode }: Props) {
+export default function EventPanel({ feature, colorMode, dataBase }: Props) {
   const [record, setRecord] = useState<EventRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -50,7 +58,7 @@ export default function EventPanel({ feature, colorMode }: Props) {
     let alive = true;
     setRecord(null);
     setError(null);
-    fetch(DATA_BASE + feature.properties.ensemble)
+    fetch(dataBase + feature.properties.ensemble)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
@@ -60,7 +68,7 @@ export default function EventPanel({ feature, colorMode }: Props) {
     return () => {
       alive = false;
     };
-  }, [feature]);
+  }, [feature, dataBase]);
 
   if (!feature) {
     return (
@@ -97,7 +105,16 @@ export default function EventPanel({ feature, colorMode }: Props) {
           </span>
           {p.mw != null && <span className="demo-chip">Mw {p.mw.toFixed(1)}</span>}
           <span className="demo-chip">{p.depth_km} km deep</span>
-          <span className="demo-chip">{p.source_type}</span>
+          <span
+            className="demo-chip"
+            title={
+              typeof p.source_type === 'string'
+                ? undefined
+                : `P(outside ±10° near-DC lune box) = ${p.source_type.p_outside_dc_box_10.toFixed(2)} — labelled non-DC only at ≥0.95`
+            }
+          >
+            {sourceTypeLabel(p.source_type)}
+          </span>
         </div>
       </div>
 
@@ -131,6 +148,19 @@ export default function EventPanel({ feature, colorMode }: Props) {
               <figcaption>Posterior mechanism</figcaption>
             </figure>
           </div>
+
+          {record && refs.length === 0 && (
+            <div className="demo-refs demo-refs--pending">
+              <p className="demo-refs__title">
+                <span className="demo-refs__badge">F-net reference pending</span>
+              </p>
+              <p className="demo-refs__pendingnote">
+                Inferred from the USGS origin within about an hour of the earthquake. NIED
+                publishes its F-net moment-tensor solution days to weeks later — the
+                catalogue comparison appears here automatically once it does.
+              </p>
+            </div>
+          )}
 
           {refs.length > 0 && (
             <div className="demo-refs">
