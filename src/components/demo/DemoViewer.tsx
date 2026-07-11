@@ -16,6 +16,16 @@ const MAG_LEGEND = [4.0, 5.0, 6.0];
 
 type DataSource = 'live' | 'bundled';
 
+// Default slider window: right handle pinned to *today* (the feed should read as live
+// even between NIED publication batches), left handle two months back. The rail still
+// spans the full store, so users can drag further back for older events.
+const DEFAULT_LOOKBACK_MS = 61 * 24 * 3600 * 1000;
+
+function defaultRange(data: EventIndex, nowMs: number): [number, number] {
+  const railMin = Date.parse(data.window_start);
+  return [Math.max(railMin, nowMs - DEFAULT_LOOKBACK_MS), nowMs];
+}
+
 export default function DemoViewer() {
   const [coll, setColl] = useState<EventIndex | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +51,7 @@ export default function DemoViewer() {
         setDataBase(LIVE_BASE);
         setDataSource('live');
         setColl(data);
-        setRange([Date.parse(data.window_start), Date.parse(data.window_end)]);
+        setRange(defaultRange(data, Date.now()));
         return;
       } catch {
         // Live store unreachable or malformed — fall back to the bundled snapshot.
@@ -52,7 +62,7 @@ export default function DemoViewer() {
         setDataBase(BUNDLED_BASE);
         setDataSource('bundled');
         setColl(data);
-        setRange([Date.parse(data.window_start), Date.parse(data.window_end)]);
+        setRange(defaultRange(data, Date.now()));
       } catch (e) {
         if (alive) setError(String(e));
       }
@@ -64,7 +74,9 @@ export default function DemoViewer() {
   }, []);
 
   const minMs = coll ? Date.parse(coll.window_start) : 0;
-  const maxMs = coll ? Date.parse(coll.window_end) : 0;
+  // Rail max = today (not the store's window_end): the right handle sits on "now" so the
+  // feed reads as live even while NIED's publication lag leaves the newest event days old.
+  const maxMs = coll ? Math.max(Date.parse(coll.window_end), Date.now()) : 0;
   const [startMs, endMs] = range ?? [minMs, maxMs];
 
   const allSorted = useMemo(
@@ -174,7 +186,7 @@ export default function DemoViewer() {
           visible={visible.length}
           total={allSorted.length}
           onChange={(s, e) => setRange([s, e])}
-          onReset={() => setRange([minMs, maxMs])}
+          onReset={() => setRange(defaultRange(coll, Date.now()))}
         />
       )}
     </div>

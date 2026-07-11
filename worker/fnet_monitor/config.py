@@ -19,6 +19,17 @@ TRAINING_DOMAIN = {"minlat": 30.5, "maxlat": 46.0, "minlon": 128.0, "maxlon": 14
 IZU_BONIN_EXCLUSION = {"maxlat": 33.0, "minlon": 138.0}  # drop if lat < 33 AND lon > 138
 TRAINING_MAX_DEPTH_KM = 80.0
 
+# Pacific far-offshore exclusions (2026-07-11, live-store evidence): events beyond the
+# Japan/Kuril trench are far outside the onshore F-net aperture and their posteriors drift
+# to strong spurious ISO — ALL 8 store events with lon > 144 and ALL 3 southern far-offshore
+# events had p_outside_dc_box >= 0.85. The nearer Sanriku band (143.2-143.6) is mixed
+# (contains 2-5 deg-Kagan recoveries) and stays in. Each box: drop if lat in [minlat,maxlat)
+# AND lon > minlon.
+OFFSHORE_EXCLUSIONS = (
+    {"name": "beyond-trench east", "minlat": 30.5, "maxlat": 46.0, "minlon": 144.0},
+    {"name": "far-offshore south", "minlat": 30.5, "maxlat": 36.0, "minlon": 141.5},
+)
+
 
 def in_training_domain(
     lat: Optional[float], lon: Optional[float], depth_km: Optional[float],
@@ -46,6 +57,12 @@ def in_training_domain(
             f"epicentre ({lat:.2f}, {lon:.2f}) in the Izu–Bonin exclusion strip "
             f"(lat < {IZU_BONIN_EXCLUSION['maxlat']} and lon > {IZU_BONIN_EXCLUSION['minlon']}) "
             f"(outside model training domain)")
+    for box in OFFSHORE_EXCLUSIONS:
+        if box["minlat"] <= lat < box["maxlat"] and lon > box["minlon"]:
+            return False, (
+                f"epicentre ({lat:.2f}, {lon:.2f}) in the '{box['name']}' Pacific offshore "
+                f"exclusion (lat in [{box['minlat']},{box['maxlat']}) and lon > {box['minlon']}) "
+                f"— beyond the F-net network aperture (outside model training domain)")
     if depth_km is not None and depth_km > max_depth_km:
         return False, (
             f"depth {depth_km:.0f}km > max_depth_km {max_depth_km:.0f} "

@@ -197,3 +197,33 @@ def test_reclassify_dry_run_changes_nothing(tmp_path):
     assert not (tmp_path / "_excluded").exists()
     state = State.load(str(tmp_path / "state.json"))
     assert state.events["ood_deep"].status == PUBLISHED
+
+
+class TestOffshoreExclusions:
+    """Pacific far-offshore exclusions (2026-07-11): beyond-trench events drift to
+    spurious strong-ISO posteriors — filtered as out_of_domain."""
+
+    def test_beyond_trench_east_dropped(self):
+        # OFF_NEMURO / FAR_E_OFF_NORTH_HONSHU pathology band (lon > 144)
+        ok, reason = in_training_domain(42.90, 145.47, 74.0)
+        assert not ok and "offshore" in reason
+        ok, reason = in_training_domain(39.00, 144.63, 15.0)
+        assert not ok and "offshore" in reason
+
+    def test_far_offshore_south_dropped(self):
+        # FAR_E_OFF_CENTRAL_HONSHU / FAR_E_OFF_IZU (lat < 36, lon > 141.5)
+        ok, reason = in_training_domain(34.78, 142.87, 28.0)
+        assert not ok and "offshore" in reason
+        ok, reason = in_training_domain(33.15, 142.48, 57.0)
+        assert not ok  # (also inside Izu-Bonin strip; either reason is fine)
+
+    def test_sanriku_band_and_coastal_kept(self):
+        # mixed Sanriku band stays (contains excellent recoveries)
+        assert in_training_domain(39.88, 143.17, 18.0)[0]
+        assert in_training_domain(39.70, 143.42, 14.0)[0]
+        # NE_OFF_IWATE near-coast band stays (Mw6.9 gold standard lives here)
+        assert in_training_domain(40.21, 142.30, 44.0)[0]
+        # Kujukuri coast (lat<36 but west of 141.5) stays
+        assert in_training_domain(35.38, 140.32, 26.9)[0]
+        # onshore Hidaka (Hokkaido, lon<144) stays
+        assert in_training_domain(42.34, 143.01, 56.0)[0]

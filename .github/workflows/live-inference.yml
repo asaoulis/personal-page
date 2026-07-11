@@ -76,13 +76,16 @@ jobs:
       - name: Install python deps
         run: |
           pip install torch==2.0.0 --index-url https://download.pytorch.org/whl/cpu
-          # instaseis is installed SEPARATELY with --no-build-isolation: under pip's isolated
-          # build env its numpy.distutils Fortran build loses module ordering (compiles
-          # finite_elem_mapping.f90 before global_parameters.f90 -> "Cannot open module file").
-          # Building against the already-installed pinned numpy orders the modules correctly.
+          # instaseis (Fortran) must build via numpy.distutils, which needs BOTH
+          # setuptools<60 AND SETUPTOOLS_USE_DISTUTILS=stdlib on this runner — otherwise
+          # setuptools' own shim compiles the .f90 files unordered with plain gcc
+          # ("Cannot open module file 'global_parameters.mod'"). Installed separately,
+          # without build isolation, against the already-pinned numpy.
           grep -v "^instaseis" worker/requirements-inference.txt > /tmp/reqs-noinsta.txt
           pip install -r /tmp/reqs-noinsta.txt
-          pip install --no-build-isolation "$(grep -o 'instaseis==[0-9.]*' worker/requirements-inference.txt)"
+          pip install "setuptools==59.8.0" wheel
+          SETUPTOOLS_USE_DISTUTILS=stdlib pip install --no-build-isolation \
+            "$(grep -o 'instaseis==[0-9.]*' worker/requirements-inference.txt)"
           # seismo-sbi at a PINNED rev, curated deps above (its requirements.txt is stale)
           pip install --no-deps "git+https://github.com/asaoulis/seismo-sbi@${SEISMO_SBI_REV}"
         env:
