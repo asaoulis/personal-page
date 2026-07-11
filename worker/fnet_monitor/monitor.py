@@ -102,6 +102,9 @@ def _retry_waiting(state: State, eid: str, now, error: str) -> str:
     st = state.schedule_retry(eid, now, error=error)
     if st.status != FAILED:
         st.status = DATA_WAITING
+    # Always say WHY on stdout: on no-publish CI runs state.json is discarded, so this
+    # line is the only surviving record of the failure reason (learned the hard way).
+    print(f"[retry] {eid}: {error} (attempt {st.attempts}, status {st.status})", flush=True)
     return st.status
 
 
@@ -270,6 +273,8 @@ def tick(
         try:
             _reset_dir(work_dir)
             raw = live_event.download_event_waveforms(sol, work_dir)
+            n_raw = sum(1 for f in Path(raw).rglob("*") if f.is_file()) if raw and Path(raw).exists() else 0
+            print(f"[download] {eid}: {n_raw} raw files", flush=True)
             if not _has_waveforms(raw):
                 _retry_waiting(state, eid, now, "no waveforms downloaded (archive lag?)")
                 counts["data_waiting"] += 1
