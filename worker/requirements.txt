@@ -5,5 +5,6 @@ requests>=2.28
 # M-D2 (real inference) will additionally need, in the worker env:
 #   obspy            # reference MT catalogue (obspy.io.nied.fnetmt), waveform handling
 #   HinetPy          # F-net request client (network code 0103) + WIN32->SAC
+#   python-dotenv    # fnet/fetch_fnet.py loads FNET_USERNAME/FNET_PASSWORD from the worker dotenv
 #   torch            # the NPE flow
 #   seismo-sbi       # installed from the research repo; provides evaluation/* + plotting/*

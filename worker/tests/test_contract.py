@@ -94,11 +94,20 @@ def test_validate_event_catches_length_mismatch():
         contract.validate_event(rec)
 
 
-def test_validate_event_requires_references():
+def test_validate_event_references_list_required_but_may_be_empty():
+    # missing / non-list references is a violation …
     rec = contract.build_event_record(_ev(), mock_posterior(_ev(), 10), "t", True)
-    rec["references"] = []
+    rec["references"] = None
     with pytest.raises(AssertionError):
         contract.validate_event(rec)
+    # … but an EMPTY list is valid: a provisional USGS-discovered record publishes with the
+    # F-net reference pending (attached later by supersede-on-match).
+    rec2 = contract.build_event_record(_ev(), mock_posterior(_ev(), 10), "t", True)
+    rec2["references"] = []
+    contract.validate_event(rec2)
+    feat = contract.index_feature(rec2)
+    assert feat["properties"]["primary_source"] == "pending"
+    assert feat["properties"]["n_references"] == 0
 
 
 def test_validate_event_requires_mt6():

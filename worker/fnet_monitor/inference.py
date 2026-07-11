@@ -101,7 +101,6 @@ def mock_posterior(ev: "QuakeEvent", n: int, rng: np.random.Generator | None = N
     dc = ev.delta if ev.delta is not None else float(r.normal(0, 8))
     gc = float(np.clip(gc, GAMMA_MIN, GAMMA_MAX))
     dc = float(np.clip(dc, DELTA_MIN, DELTA_MAX))
-    source_type = ev.source_type or classify_source_type(gc, dc)
 
     cov = [[14.0, 0.0], [0.0, 36.0]]
     samples = r.multivariate_normal([gc, dc], cov, n)
@@ -110,8 +109,10 @@ def mock_posterior(ev: "QuakeEvent", n: int, rng: np.random.Generator | None = N
 
     mt6 = _mt6_ensemble(strike, dip, rake, min(n, N_MT6), r)
 
-    # non-DC exclusion metric (τ=10°), same definition as synthetic.synthetic_posterior.
-    p_outside = float(np.mean((np.abs(gamma) >= 10.0) | (np.abs(delta) >= 10.0)))
+    # probabilistic source-type block (lune-box exclusion metric, τ=10°) — pure numpy path.
+    from .source_type import source_type_block
+    source_type = source_type_block(gamma=gamma, delta=delta)
+    p_outside = source_type["p_outside_dc_box_10"]
 
     # A mock catalogue reference solution near the posterior mean.
     ref_gamma = float(np.clip(gc + r.normal(0, 2.5), GAMMA_MIN, GAMMA_MAX))
@@ -152,9 +153,93 @@ def mock_posterior(ev: "QuakeEvent", n: int, rng: np.random.Generator | None = N
     }
 
 
-def real_posterior(ev: "QuakeEvent", n: int) -> dict:  # pragma: no cover - M-D2
-    raise NotImplementedError(
-        "Real NPE inference is milestone M-D2: fetch F-net waveforms (HinetPy, code 0103) "
-        "and sample the trained seismo_sbi posterior. Must return the same schema-3 dict shape "
-        "as mock_posterior() / synthetic.synthetic_posterior()."
-    )
+# --------------------------------------------------------------------------- real NPE
+# Defaults point at the local seismo-sbi checkout + the Jan-2026 F-net catalogue; override via
+# env so a server / CI can relocate them. The heavy backend is built lazily + cached so the
+# pure-python worker (mock path) never imports torch/seismo_sbi.
+import os as _os
+
+NPE_CONFIG = _os.environ.get(
+    "NPE_CONFIG", "/home/alex/work/seismo-sbi/scripts/configs/japan/first_ml_npe_japan.yaml")
+NPE_CKPT_DIR = _os.environ.get(
+    "NPE_CKPT_DIR", "/home/alex/work/seismo-sbi/ml-checkpoints/japan_v1")
+NPE_CATALOGUE_DIR = _os.environ.get(
+    "NPE_CATALOGUE_DIR", "/data/alex/fnet_japan/catalogue/events")
+NPE_REFERENCE_CACHE = _os.environ.get(
+    "NPE_REFERENCE_CACHE",
+    _os.path.join(_os.path.dirname(_os.path.dirname(__file__)), "data", "reference_cache.json"))
+
+_BACKEND = None
+
+
+def get_backend():
+    """Lazily build + cache the NpeBackend (loads the pipeline+posterior+scaler once)."""
+    global _BACKEND
+    if _BACKEND is None:
+        from .npe_backend import NpeBackend
+        _BACKEND = NpeBackend(NPE_CONFIG, NPE_CKPT_DIR)
+    return _BACKEND
+
+
+def event_stem(ev: "QuakeEvent") -> str:
+    """Origin-time stem `YYYYMMDDTHHMMSS` — the catalogue h5 / EventSolution match key."""
+    t = ev.time
+    return f"{t.year:04d}{t.month:02d}{t.day:02d}T{t.hour:02d}{t.minute:02d}{t.second:02d}"
+
+
+def resolve_event_h5(ev: "QuakeEvent", catalogue_dir: str = None) -> str:
+    """Path to this event's SBI h5 in the pre-built catalogue (exact stem, else ±a few seconds).
+
+    Returns the path or raises FileNotFoundError. The live download→preprocess path (Phase C)
+    supplies its own h5 and calls `real_posterior_from_h5` directly.
+    """
+    import glob
+    cdir = catalogue_dir or NPE_CATALOGUE_DIR
+    stem = event_stem(ev)
+    exact = _os.path.join(cdir, f"{stem}.h5")
+    if _os.path.exists(exact):
+        return exact
+    # tolerate a ±2 s rounding difference between the QuakeML origin and the h5 stem
+    day = stem[:9]
+    for p in sorted(glob.glob(_os.path.join(cdir, f"{day}*.h5"))):
+        hh = _os.path.basename(p)[9:15]
+        try:
+            dt = abs((int(hh[:2]) * 3600 + int(hh[2:4]) * 60 + int(hh[4:6]))
+                     - (ev.time.hour * 3600 + ev.time.minute * 60 + ev.time.second))
+        except ValueError:
+            continue
+        if dt <= 2:
+            return p
+    raise FileNotFoundError(f"no catalogue h5 for {stem} under {cdir}")
+
+
+def _references_for(ev: "QuakeEvent") -> list:
+    """Normalised references (primary first) for an event — real from the cache, else synthetic."""
+    from . import references as R
+    cache = R.load_cache(NPE_REFERENCE_CACHE)
+    raw = cache.get(ev.id, [])
+    if not raw:
+        raw = [R.synthesize_reference(ev)]
+    raw = sorted(raw, key=lambda r: R.source_rank(r.get("source", "")))
+    return [R.normalise_reference(r) for r in raw]
+
+
+def real_posterior_from_h5(ev: "QuakeEvent", event_h5: str, n: int, *,
+                           components_map: dict = None, station_names=None) -> dict:
+    """Run the trained NPE on a specific event h5 and return the schema-3 `post` dict.
+
+    Shared by the catalogue driver and the live path. `source_vec` = `[lat, lon, depth_km]`
+    (the model's `ml_conditioning.param_map` order).
+    """
+    from .mt_serialize import post_from_cloud
+    backend = get_backend()
+    source_vec = [float(ev.lat), float(ev.lon), float(ev.depth_km)]
+    samples6, _used = backend.infer(event_h5, source_vec, num_samples=n,
+                                    components_map=components_map, station_names=station_names)
+    refs = _references_for(ev)
+    return post_from_cloud(samples6, refs)
+
+
+def real_posterior(ev: "QuakeEvent", n: int) -> dict:
+    """Real NPE posterior for a catalogued event (resolves its h5 in the F-net catalogue)."""
+    return real_posterior_from_h5(ev, resolve_event_h5(ev), n)

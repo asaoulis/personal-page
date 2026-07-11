@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import List
 
 from .catalogue import QuakeEvent
-from .inference import classify_source_type
+from .source_type import source_type_block
 
 GAMMA_MIN, GAMMA_MAX = -30.0, 30.0
 DELTA_MIN, DELTA_MAX = -90.0, 90.0
@@ -121,12 +121,13 @@ def synthetic_posterior(
 
     # Headline non-DC metric: posterior probability the source is OUTSIDE the near-DC lune box
     # |γ|<τ & |δ|<τ (τ=10°), matching the santorini uncertainty_metrics.prob_outside_dc_box.
-    p_outside = float(np.mean((np.abs(g) >= DC_BOX_TAU) | (np.abs(d) >= DC_BOX_TAU)))
+    # `source_type` is the probabilistic block {p_outside_dc_box_10, label}.
+    source_type = source_type_block(gamma=g, delta=d, tau_deg=DC_BOX_TAU)
+    p_outside = source_type["p_outside_dc_box_10"]
 
     best_mt = pyrocko_mt(best.tolist())
     s, dip, rake = (float(x) for x in best_mt.both_strike_dip_rake()[0])
     gamma_mean, delta_mean = float(np.mean(g)), float(np.mean(d))
-    source_type = classify_source_type(gamma_mean, delta_mean)
 
     out_refs = []
     for ref in refs:

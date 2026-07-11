@@ -7,4 +7,11 @@ requires-python = ">=3.9"
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
-addopts = "-q"
+# `-m "not live"` deselects the opt-in `live` marker by default (real NIED download +
+# real NPE inference + real checkpoint/fiducial-DB — network + creds + minutes of wall
+# time). A later `-m live` on the command line overrides this (pytest's `-m` is
+# last-wins), so `pytest worker/tests/test_live_pipeline.py -m live -q` still runs it.
+addopts = "-q -m \"not live\""
+markers = [
+    "live: opt-in, hits the real NIED archive + real NPE checkpoint (network, creds, ~minutes); excluded by default",
+]

@@ -1,0 +1,33 @@
+# Real-inference deps for the GitHub Actions worker (mirrors the versions of the
+# proven local conda env `seismo-sbi`, python 3.8 — keep CI on python 3.8 to match).
+# seismo-sbi itself is installed separately with --no-deps at a pinned rev (its
+# requirements.txt is stale/heavy); this file is the curated runtime set.
+#
+# torch: install the CPU wheel FIRST via
+#   pip install torch==2.0.0 --index-url https://download.pytorch.org/whl/cpu
+# (plain PyPI torch==2.0.0 drags ~2 GB of CUDA libs the runner doesn't need).
+
+numpy==1.24.4
+scipy==1.10.1
+scikit-learn==1.2.1
+h5py==3.10.0
+pyyaml==6.0.2
+joblib==1.3.2
+tqdm
+pandas==2.0.3
+matplotlib==3.7.5
+
+# NPE stack
+sbi==0.21.0
+nflows==0.14
+pytorch-lightning==2.2.1
+
+# seismology
+obspy==1.4.0
+instaseis==1.4.2        # needs gfortran at build time (apt-get install gfortran)
+pyrocko==2024.1.10
+
+# F-net access
+HinetPy==0.10.0
+python-dotenv==1.0.1
+requests

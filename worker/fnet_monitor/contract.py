@@ -16,7 +16,9 @@ writing). Keep them in lockstep with the frontend's TypeScript types (`types.ts`
 
 Schema history: v2 = single `reference` + (gamma, delta) cloud. v3 = `references[]` (multi-
 reference, primary first) + `posterior.mt6` ensemble + index `window_start`/`window_end` +
-`primary_source`/`primary_kagan_deg`/`n_references`. This module stays PURE (json/stdlib only)
+`primary_source`/`primary_kagan_deg`/`n_references`. v3 extension (2026-07): `source_type`
+became the probabilistic block `{p_outside_dc_box_10, label}` (lune-box exclusion metric;
+"non-DC (...)" only at p >= 0.95, else "DC-consistent"). This module stays PURE (json/stdlib only)
 so the legacy pure-python worker + its tests run anywhere; the science-heavy generator lives in
 separate modules under the `seismo-sbi` conda env.
 """
@@ -99,7 +101,8 @@ def index_feature(rec: dict) -> dict:
             "rake": rec["rake"],
             "mw": rec.get("mw"),
             "p_outside_dc_box": rec.get("p_outside_dc_box"),
-            "primary_source": primary.get("source", "—"),
+            # no references yet => a provisional record awaiting the F-net publication
+            "primary_source": primary.get("source", "pending"),
             "primary_kagan_deg": primary.get("kagan_deg"),
             "n_references": len(refs),
             "ensemble": f"events/{rec['id']}.json",
@@ -184,9 +187,24 @@ def _validate_reference(ref: dict) -> None:
     _require(-90.0 <= ref["delta"] <= 90.0, "reference delta out of [-90,90]")
 
 
+def _validate_source_type(st) -> None:
+    """`source_type` is the probabilistic block {p_outside_dc_box_10, label}: the label may
+    claim non-DC ONLY at >= 0.95 posterior mass outside the +/-10 deg near-DC lune box."""
+    _require(isinstance(st, dict), "source_type must be a {p_outside_dc_box_10, label} block")
+    _require("label" in st and isinstance(st["label"], str) and st["label"],
+             "source_type missing 'label'")
+    p = st.get("p_outside_dc_box_10")
+    _require(isinstance(p, (int, float)) and 0.0 <= float(p) <= 1.0,
+             "source_type p_outside_dc_box_10 must be a probability in [0,1]")
+    if st["label"].lower().startswith("non-dc"):
+        _require(float(p) >= 0.95, "non-DC label below the 0.95 credibility threshold")
+
+
 def validate_event(rec: dict) -> None:
     for k in ("id", "time", "mag", "depth_km", "lon", "lat", "strike", "dip", "rake"):
         _require(k in rec, f"event missing '{k}'")
+    _require("source_type" in rec, "event missing 'source_type'")
+    _validate_source_type(rec["source_type"])
     p = rec.get("posterior", {})
     _require("gamma" in p and "delta" in p, "posterior missing gamma/delta")
     _require(len(p["gamma"]) == len(p["delta"]), "gamma/delta length mismatch")
@@ -197,7 +215,9 @@ def validate_event(rec: dict) -> None:
     _require(len(p["mt6"]) > 0, "empty mt6 ensemble")
     _require(all(len(m) == 6 for m in p["mt6"]), "mt6 entries must be 6-vectors")
     refs = rec.get("references")
-    _require(isinstance(refs, list) and len(refs) > 0, "references must be a non-empty list")
+    # An EMPTY list is valid: a provisional USGS-discovered event is published with the
+    # F-net reference PENDING (attached later by the supersede-on-match flow).
+    _require(isinstance(refs, list), "references must be a list (may be empty: pending)")
     for ref in refs:
         _validate_reference(ref)
 
