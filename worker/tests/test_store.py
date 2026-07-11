@@ -136,3 +136,16 @@ def test_gitbranchstore_publish_runs_when_enabled(tmp_path, monkeypatch):
     # the token appears ONLY in the push URL, injected as x-access-token
     push = next(c for c in calls if c[:2] == ["git", "push"])
     assert any("x-access-token:SECRET@github.com/owner/repo.git" in tok for tok in push)
+
+
+def test_publish_gitignore_excludes_store_internals(tmp_path):
+    """The public data branch must never carry raw waveforms (_work, NIED-licensed)
+    or store-maintenance internals — pin the exclusion list both publish channels use."""
+    from fnet_monitor.store import GitBranchStore
+
+    p = GitBranchStore.write_publish_gitignore(tmp_path)
+    lines = open(p).read().splitlines()
+    for required in ("_work/", "_excluded/", "state.json.bak*"):
+        assert required in lines
+    # idempotent
+    assert GitBranchStore.write_publish_gitignore(tmp_path) == p

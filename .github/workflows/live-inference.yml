@@ -119,6 +119,9 @@ jobs:
           git init -q -b data
           git config user.name "fnet-bot"
           git config user.email "fnet-bot@users.noreply.github.com"
+          # NEVER publish raw waveform work dirs (NIED-licensed) or store internals.
+          # Keep in lockstep with GitBranchStore.PUBLISH_EXCLUDES (worker/fnet_monitor/store.py).
+          printf '_work/\n_excluded/\nstate.json.bak*\n.gitignore\n' > .gitignore
           git add -A
           git commit -q -m "events: $(date -u +%FT%TZ)" || { echo "no changes"; exit 0; }
           git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data

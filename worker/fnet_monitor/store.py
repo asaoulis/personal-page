@@ -163,6 +163,22 @@ class GitBranchStore(FileStore):
             return None  # guarded: never push implicitly
         self._push()
 
+    # What must NEVER land on the public data branch: `_work/` holds raw downloaded
+    # waveforms (NIED-licensed — not redistributable) kept for failure debugging;
+    # `_excluded/` and state backups are internal store maintenance artefacts.
+    PUBLISH_EXCLUDES = ("_work/", "_excluded/", "state.json.bak*", ".gitignore")
+
+    @classmethod
+    def write_publish_gitignore(cls, out_dir) -> str:
+        """Write the publish-exclusion `.gitignore` into ``out_dir`` (idempotent).
+
+        Shared by :meth:`_push` and the CI workflow's own publish step so both
+        channels exclude the same internals from the public branch."""
+        p = os.path.join(str(out_dir), ".gitignore")
+        with open(p, "w") as f:
+            f.write("\n".join(cls.PUBLISH_EXCLUDES) + "\n")
+        return p
+
     def _push(self) -> None:
         """Orphan-branch force-push: re-init the out-dir as a fresh repo and push it as `branch`.
 
@@ -186,6 +202,7 @@ class GitBranchStore(FileStore):
         run("git", "init", "-q", "-b", self.branch)
         run("git", "config", "user.name", self.author_name)
         run("git", "config", "user.email", self.author_email)
+        self.write_publish_gitignore(d)
         run("git", "add", "-A")
         stamp = to_iso(utcnow())
         # allow the no-change case to be a soft success, like the workflow
