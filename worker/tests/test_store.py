@@ -149,3 +149,7 @@ def test_publish_gitignore_excludes_store_internals(tmp_path):
         assert required in lines
     # idempotent
     assert GitBranchStore.write_publish_gitignore(tmp_path) == p
+    # the data branch must also carry a no-deploy vercel.json (Vercel reads it from
+    # the DEPLOYED branch — a main-branch setting does not apply to data pushes)
+    vj = json.loads((tmp_path / "vercel.json").read_text())
+    assert vj["git"]["deploymentEnabled"] is False
