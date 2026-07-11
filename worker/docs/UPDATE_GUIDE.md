@@ -45,11 +45,20 @@ personal-page repo root unless noted. The shared science library is the SEPARATE
 ```
 
 Where each stage RUNS:
-- **Production**: GitHub Actions `.github/workflows/live-inference.yml`, one `monitor.tick()`
-  per run (30-min cron once enabled; `workflow_dispatch` for manual runs — scheduled runs
-  always publish, manual runs only with `publish=true`). Heavy assets (fiducial Instaseis DB,
-  checkpoint, CI-rewritten config, win32tools) come from the GitHub release `assets-v1` and are
-  cached by `actions/cache`.
+- **Download-dependent ticks CANNOT run on GitHub-hosted runners.** Diagnosed 2026-07-11
+  (smokes #4/#5 + local differentials): NIED authenticates the runner fine (valid-creds proven
+  — wrong creds raise "Unauthorized" loudly) but its win32 data service returns DATALESS
+  archives to GitHub/Azure egress IPs — every channel "not exists", 0 files, for windows that
+  fetch 63/63 locally minutes later. Not code, not creds, not HinetPy version, not archive lag.
+- **Production (live host)**: the LOCAL workstation daemon —
+  `bash worker/deploy/run_local_daemon.sh` (setsid loop, per-tick `--publish` to the data
+  branch, log+pid under the store dir). Options if 24/7 matters: a self-hosted GitHub runner
+  on the workstation (keeps the workflow/cron/secrets machinery) or a small VM whose egress
+  NIED accepts (unproven — test a fetch before committing to one).
+- **GitHub Actions** `.github/workflows/live-inference.yml` stays as a *dispatchable fallback*
+  for everything that doesn't download (supersede/index bookkeeping, publish path; runner env
+  proven green end-to-end incl. torch + instaseis + NpeBackend). Do NOT enable its cron while
+  hosted runners can't fetch — scheduled ticks would just churn `data_waiting`.
 - **Locally** (backfills, debugging): `python -m fnet_monitor.monitor --loop|--once --out <dir>`
   (worker/ cwd, conda env `seismo-sbi`); `--publish` wraps the store in `GitBranchStore`.
 
