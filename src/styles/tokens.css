@@ -14,15 +14,17 @@
   --font-serif: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
   --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
 
-  /* ---- Colour: neutrals (cool ink on cool, teal-tinted paper) ------------ */
-  --paper: #fafcfd; /* cool near-white with a blue hint */
-  --bg-subtle: #eff5f6; /* raised strips / cards on paper */
-  --bg-sunken: #e3edef; /* sunken wells */
+  /* ---- Colour: neutrals (warm, unbleached-paper ground — the cool
+          teal-tinted strips read clinical; the warmth now lives in the paper
+          and the brights stay as accents) ---------------------------------- */
+  --paper: #fbfaf6; /* warm near-white, a hint of cream */
+  --bg-subtle: #f4f0e4; /* raised strips / cards on paper */
+  --bg-sunken: #ece6d4; /* sunken wells */
   --ink: #16202b; /* deep navy-slate, primary text */
-  --ink-soft: #4a566a; /* secondary text */
-  --ink-faint: #7c8797; /* captions, meta */
-  --border: #dce7e9; /* hairlines on paper */
-  --border-strong: #c4d4d7;
+  --ink-soft: #4d5568; /* secondary text */
+  --ink-faint: #7f8494; /* captions, meta */
+  --border: #e5dfcd; /* hairlines on paper */
+  --border-strong: #d2c9ae;
 
   /* ---- Colour: deep navy band (the figures' base) ------------------------ */
   --navy: #0e1630; /* hero band background */
@@ -33,7 +35,7 @@
   /* ---- Colour: primary accent (teal / cyan) ------------------------------ */
   --accent: #0e8a8f; /* teal, the segmentation cyan calmed down */
   --accent-strong: #0a6c70; /* hover / active */
-  --accent-tint: #e3f1f0; /* faint fill behind accents on paper */
+  --accent-tint: #e7efe6; /* faint fill behind accents, warmed */
   --accent-on-navy: #4fd6d0; /* teal that pops on the navy band */
   --accent-contrast: #ffffff; /* text on accent */
 

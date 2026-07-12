@@ -3,6 +3,8 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import Icon from '../components/Icon.astro';
+import HeroBackdrop from '../components/hero/HeroBackdrop';
+import Imprint from '../components/imprint/Imprint';
 import { SOCIALS } from '../config';
 import { works, references } from '../data/works';
 
@@ -11,8 +13,11 @@ const refById = new Map(references.map((r) => [r.id, r]));
 ---
 
 <BaseLayout>
-  <!-- Hero: opens on the deep navy of the science, with the person front and centre. -->
+  <!-- Hero: opens on the deep navy of the science, with the person front and centre.
+       Behind it, the split backdrop: lensed galaxy-shear field | rupturing source
+       solutions, meeting at a live seismogram. -->
   <section class="hero">
+    <HeroBackdrop client:load />
     <div class="container hero__inner">
       <div class="hero__text">
         <p class="hero__eyebrow reveal">Machine learning for science</p>
@@ -38,6 +43,16 @@ const refById = new Map(references.map((r) => [r.id, r]));
         />
       </div>
     </div>
+    <div class="hero__hints" aria-hidden="true">
+      <p class="hero__hint reveal" data-delay="400ms">
+        <b>move</b> — your cursor is a dark matter halo, shearing the image we receive of distant
+        galaxies
+      </p>
+      <p class="hero__hint hero__hint--right reveal" data-delay="480ms">
+        <b>click</b> — to produce a random earthquake, whose shaking is felt at the station on the
+        seam
+      </p>
+    </div>
   </section>
 
   <!-- Short bio strip -->
@@ -60,40 +75,50 @@ const refById = new Map(references.map((r) => [r.id, r]));
         <h2>Research</h2>
       </header>
 
-      <ol class="work__list">
-        {
-          works.map((w, i) => {
-            const Tag = w.project ? 'a' : 'div';
-            const attrs = w.project ? { href: w.project } : {};
-            return (
-              <li class="work__item reveal" data-delay={`${i * 60}ms`}>
-                <Tag class="work__go" {...attrs}>
-                  <span class="work__text">{w.text}</span>
-                  {w.cite.length > 0 && (
-                    <span class="work__cites">
-                      {w.cite.map((n) => {
-                        const r = refById.get(n);
-                        return (
-                          <span class="cite" title={r?.label}>
-                            [{n}]
-                          </span>
-                        );
-                      })}
-                    </span>
-                  )}
-                  {w.project && <Icon name="arrow" size={16} class="work__arrow" />}
-                </Tag>
-              </li>
-            );
-          })
-        }
-      </ol>
+      <div class="work__grid">
+        <ol class="work__list">
+          {
+            works.map((w, i) => {
+              const Tag = w.project ? 'a' : 'div';
+              const attrs = w.project ? { href: w.project } : {};
+              return (
+                <li class="work__item reveal" data-delay={`${i * 60}ms`} data-domain={w.domain}>
+                  <Tag class="work__go" {...attrs}>
+                    <span class="work__text">{w.text}</span>
+                    {w.cite.length > 0 && (
+                      <span class="work__cites">
+                        {w.cite.map((n) => {
+                          const r = refById.get(n);
+                          return (
+                            <span class="cite" title={r?.label}>
+                              [{n}]
+                            </span>
+                          );
+                        })}
+                      </span>
+                    )}
+                    {w.project && <Icon name="arrow" size={16} class="work__arrow" />}
+                  </Tag>
+                </li>
+              );
+            })
+          }
+        </ol>
+        <div class="work__plate reveal" data-delay="120ms">
+          <Imprint client:visible />
+        </div>
+      </div>
 
       <div class="dive reveal">
         <a class="dive__link" href="#gallery">See the projects <Icon name="arrow" size={18} /></a>
       </div>
     </div>
   </section>
+
+  <!-- A quiet block-print divider before the gallery -->
+  <div class="imprint-divider" aria-hidden="true">
+    <Imprint variant="band" client:visible />
+  </div>
 
   <!-- The pretty gallery -->
   <section id="gallery" class="section gallery">
@@ -162,12 +187,66 @@ const refById = new Map(references.map((r) => [r.id, r]));
       linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
     color: var(--on-navy);
     padding-block: clamp(var(--space-8), 12vh, var(--space-10)) var(--space-9);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero :global(.hero-backdrop) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
   }
   .hero__inner {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: var(--space-8);
+    position: relative;
+    z-index: 1;
+    /* let the backdrop take the pointer everywhere except the CTAs */
+    pointer-events: none;
+  }
+  .hero__cta :global(.btn) {
+    pointer-events: auto;
+  }
+  /* panel captions along the bottom edge, one per world */
+  .hero__hints {
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    right: 0;
+    bottom: 1.1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-6);
+    padding-inline: var(--space-6);
+    pointer-events: none;
+  }
+  .hero__hint {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    line-height: 1.7;
+    color: var(--on-navy-soft);
+    opacity: 0.85;
+    max-width: 44%;
+  }
+  .hero__hint b {
+    color: var(--accent-on-navy);
+    font-weight: 600;
+  }
+  .hero__hint--right {
+    text-align: right;
+  }
+  @media (max-width: 720px) {
+    .hero__hint--right {
+      display: none; /* no seismic panel on small screens */
+    }
+    .hero__hint {
+      max-width: 100%;
+    }
   }
   .hero__eyebrow {
     font-family: var(--font-mono);
@@ -180,6 +259,7 @@ const refById = new Map(references.map((r) => [r.id, r]));
     margin-top: var(--space-3);
     color: #fff;
     font-size: var(--step-5);
+    text-shadow: 0 2px 24px rgba(10, 16, 36, 0.75);
   }
   .hero__lead {
     margin-top: var(--space-4);
@@ -188,6 +268,7 @@ const refById = new Map(references.map((r) => [r.id, r]));
     font-size: var(--step-2);
     line-height: 1.32;
     color: var(--on-navy);
+    text-shadow: 0 1px 16px rgba(10, 16, 36, 0.85);
   }
   .hero__cta {
     margin-top: var(--space-6);
@@ -243,6 +324,49 @@ const refById = new Map(references.map((r) => [r.id, r]));
   .work__head h2 {
     margin-top: var(--space-2);
   }
+  .work__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 62ch) 1fr;
+    gap: var(--space-8);
+    align-items: start;
+  }
+  .work__plate {
+    position: sticky;
+    top: calc(var(--header-h) + var(--space-6));
+    justify-self: center;
+    width: min(100%, 19rem);
+  }
+  .work :global(.imprint-plate) {
+    margin: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--paper);
+    box-shadow: var(--shadow);
+  }
+  .work :global(.imprint-plate canvas) {
+    display: block;
+    width: 100%;
+    height: 21rem;
+    cursor: pointer;
+  }
+  .work :global(.imprint-plate figcaption) {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding: 0.55rem 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 1000px) {
+    .work__grid {
+      grid-template-columns: 1fr;
+    }
+    .work__plate {
+      display: none;
+    }
+  }
   .work__list {
     list-style: none;
     padding: 0;
@@ -282,7 +406,7 @@ const refById = new Map(references.map((r) => [r.id, r]));
   .cite {
     font-family: var(--font-mono);
     font-size: 0.72em;
-    color: var(--accent);
+    color: var(--amber-strong);
     font-weight: 500;
   }
   .work__go :global(.work__arrow) {
@@ -326,6 +450,13 @@ const refById = new Map(references.map((r) => [r.id, r]));
     transform: rotate(90deg) translateX(3px);
   }
 
+  /* ---- Imprint divider strip ---- */
+  .imprint-divider :global(canvas.imprint-band) {
+    display: block;
+    width: 100%;
+    height: 46px;
+  }
+
   /* ---- Gallery ---- */
   .gallery {
     background: var(--bg-subtle);
@@ -362,7 +493,7 @@ const refById = new Map(references.map((r) => [r.id, r]));
   .refs__num {
     font-family: var(--font-mono);
     font-size: var(--step--1);
-    color: var(--accent);
+    color: var(--amber-strong);
   }
   .refs__link {
     font-weight: 500;
