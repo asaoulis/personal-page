@@ -67,40 +67,49 @@ export type Work = {
   cite: number[];
   /** Link to the matching project page or demo; omitted for strands without a page. */
   project?: string;
+  /** Which imprint block-print the strand re-inks on hover (see Imprint.tsx). */
+  domain: 'seismology' | 'cosmology' | 'signals';
 };
 
 export const works: Work[] = [
   {
     text: 'Machine learning for more accurate characterisation of earthquake sources from their seismic waveforms, with calibrated uncertainties, running live on the Japan seismic network.',
     cite: [1, 2],
+    domain: 'seismology',
     project: '/demo/',
   },
   {
     text: 'Deep-learning data compression and probabilistic modelling to estimate the dark matter and dark energy content of the universe, with transfer learning reducing training costs by an order of magnitude.',
     cite: [3, 4],
+    domain: 'cosmology',
     project: '/projects/cosmology-sbi/',
   },
   {
     text: 'Generative diffusion models that turn coarse climate projections into high-resolution local rainfall fields, at continental scale.',
     cite: [5],
+    domain: 'signals',
     project: '/projects/diffusion-climate-downscaling/',
   },
   {
     text: 'Semantic segmentation for tracking ocean currents and detecting whale calls across an ocean seismic array, enabling automated tracking of individual whales and measurement of tidal currents from the seafloor.',
     cite: [6],
+    domain: 'signals',
     project: '/projects/ocean-segmentation/',
   },
   {
     text: 'Time-series anomaly detection and Bayesian-optimisation beam tuning on a live particle accelerator, deployed to production with CI/CD at a national research facility.',
     cite: [],
+    domain: 'signals',
     project: '/projects/timeseries-anomaly/',
   },
   {
     text: 'Time-series forecasting and imputation with diffusion models on athlete health and performance data, and classification with deep-learning ensembles.',
     cite: [],
+    domain: 'signals',
   },
   {
     text: 'Further applications: correcting the global terrain map with a hybrid CNN and vision-transformer model, and generative modelling of Earth-systems observations, super-resolving satellite imagery of Arctic sea ice.',
     cite: [7],
+    domain: 'cosmology',
   },
 ];
