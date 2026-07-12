@@ -4,7 +4,7 @@
 
 export const SITE = {
   /** Canonical URL — update to the custom domain once added on Vercel. */
-  url: 'https://personal-page.vercel.app',
+  url: 'https://alex-saoulis.vercel.app',
   title: 'Alex Saoulis',
   role: 'Machine learning for science',
   affiliation: 'University College London',
