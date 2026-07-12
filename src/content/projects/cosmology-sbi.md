@@ -8,11 +8,11 @@ metric: { value: '8–15×', label: 'lower simulation and training cost' }
 bullets:
   [
     'Pre-training on cheap, approximate simulations, then fine-tuning on a small number of accurate ones, transfers what the network has learned.',
-    'On the CAMELS dataset, this reduced the accurate training simulations required by eight to fifteen times.',
-    'Extended to field-level weak-lensing analysis, it produces well-calibrated cosmological posteriors from as few as 60 to 100 accurate simulations, an order of magnitude fewer than usual.',
+    'This reduced the accurate training simulations required by eight to fifteen times.',
+    'Extended to a realistic cosmological analysis, it produces well-calibrated cosmological posteriors from as few as 60 to 100 accurate simulations, an order of magnitude fewer than usual.',
   ]
 figure: '/figures/cosmology-overview.png'
-figureCaption: 'Pre-training on around 10,000 cheap approximate simulations, then fine-tuning on fewer than 100 accurate N-body simulations. Figure from the field-level weak-lensing paper.'
+figureCaption: 'Pre-training on many cheap approximate simulations, then fine-tuning on fewer than 100 accurate N-body simulations. Figure from the field-level weak-lensing paper.'
 tags: ['Transfer learning', 'Simulation-based inference', 'Neural compression', 'Weak lensing']
 links:
   [
@@ -25,12 +25,10 @@ href: '/projects/cosmology-sbi/'
 year: '2025'
 ---
 
-The bottleneck in this analysis is simulation cost. Inferring parameters such as the matter
+The bottleneck in this analysis is simulation cost required to train deep neural networks. Inferring parameters such as the matter
 density requires comparing data against many simulated universes, and the physically accurate
-simulations (with gas, stars, and feedback) are expensive to produce.
+simulations (with full gravity) are expensive to produce.
 
-The approach exploits fidelity. The network is first trained on many cheap, dark-matter-only
+The approach exploits cheaper, less accurate simulations. The network is first trained on many cheap, dark-matter-only
 simulations to learn the general structure of the problem, then fine-tuned on a few accurate ones.
-The same idea extends to field-level analysis, where the network processes a full lensing map
-rather than a set of summary statistics, and still recovers well-calibrated posteriors from under
-100 accurate simulations.
+We demonstrate the same idea for realistic cosmological observations, demonstrating that our deep-learning techniques can be used to produce very precise estimates of the contents of the universe with very few simulations.

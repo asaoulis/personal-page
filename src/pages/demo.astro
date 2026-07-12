@@ -12,7 +12,7 @@ const pipeline = [
   {
     n: '02',
     t: 'Infer',
-    d: 'For each event, the worker downloads the waveforms and runs the neural network, producing the full range of plausible source mechanisms in seconds, on an ordinary CPU.',
+    d: 'For each event, the worker downloads the waveforms and the neural network ingests them, producing the full range of plausible source mechanisms in seconds, on an ordinary CPU.',
   },
   {
     n: '03',
@@ -22,7 +22,7 @@ const pipeline = [
   {
     n: '04',
     t: 'Explore',
-    d: 'This viewer reads the precomputed month-long window. The time slider filters entirely in your browser, so scrubbing is instant.',
+    d: 'This viewer reads the several month-long window. The time slider filters entirely in your browser, so scrubbing is instant.',
   },
 ];
 ---
@@ -34,7 +34,7 @@ const pipeline = [
   <PageHeader
     eyebrow="Live"
     title="Live earthquake monitor: Japan"
-    lead="When an earthquake happens in Japan, this monitor picks up the seismic recordings and a neural network estimates how the ground slipped: the orientation of the fault and the type of movement, with an honest range of uncertainty. Select a marker to compare the model with the official catalogue solution, and use the slider to move through the month."
+    lead="When an earthquake happens in Japan, this monitor picks up the seismic recordings and a neural network characterises the earthquake: the orientation of the fault, the type of fault. Select a marker to compare the model with the official catalogue solution, and use the slider to move through the month."
   />
 
   <div class="container container--wide">
@@ -49,18 +49,17 @@ const pipeline = [
         <p class="eyebrow">What is this?</p>
         <h2>Deep learning, reading earthquakes as they happen</h2>
         <p class="lead">
-          Each seismometer records the ground shaking as a long, noisy signal. A small neural
-          network (a CNN) reads each station’s recording, and a transformer combines the results
-          across the whole network into a compact summary. From that summary, the model predicts the
-          earthquake’s faulting orientation and type, as a probability distribution rather than a
-          single answer.
+          Each seismometer records the ground shaking as a long, noisy signal. A deep neural network
+          (a CNN) reads each station’s recording, and a transformer combines the resulting
+          embeddings across the whole network into a compact summary. From that summary, the model
+          predicts the earthquake’s faulting orientation and type probabilistically.
         </p>
         <p class="lead">
-          The interesting part is the uncertainty. The model is trained on hundreds of thousands of
-          simulated earthquakes that include the things we genuinely do not know: exactly where the
-          source was, and what the Earth’s interior looks like along the way. Having seen those
-          effects in training, it gives more accurate estimates of the earthquake itself, and it is
-          honest about what the data cannot pin down.
+          Our contribution is a holistic approach to uncertainty quantification. The model is
+          trained on hundreds of thousands of simulated earthquakes that include the things we
+          genuinely do not know: exactly where the source was, and what the Earth’s interior looks
+          like along the way. Having seen those effects in training, it gives more accurate
+          estimates of the earthquake itself, and it is honest about what the data cannot pin down.
         </p>
       </header>
 
@@ -79,7 +78,7 @@ const pipeline = [
       <div class="how__note reveal">
         <p>
           The plots and conventions come from the same seismology codebase as my published
-          inversions. The page simply serves what the inference pipeline produces.
+          inversions. The page simply serves an operationalised version of our approach.
         </p>
       </div>
 
@@ -87,9 +86,9 @@ const pipeline = [
         <h2 class="disclaimer__head">A demonstration, not a catalogue</h2>
         <p>
           This monitor runs automatically. Events and solutions are not manually inspected, and
-          occasional poor solutions are expected, for example when data are missing or noisy. Do not
-          treat the results as an earthquake catalogue; for authoritative solutions, use the agency
-          catalogues below.
+          occasional poor solutions are expected, for example when data are extremely poor quality.
+          Do not treat the results as an earthquake catalogue; for authoritative solutions, use the
+          agency catalogues below.
         </p>
         <p class="disclaimer__sources">
           Data sources: waveforms and reference moment-tensor solutions from{' '}
