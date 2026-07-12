@@ -54,7 +54,7 @@ export default function RangeSlider({
     <div className="demo-controls">
       <div className="demo-controls__head">
         <span className="demo-controls__now">
-          {fmtDate(startMs)} — {fmtDate(endMs)}
+          {fmtDate(startMs)}–{fmtDate(endMs)}
         </span>
         <span className="demo-controls__count">
           {visible} / {total} events in range

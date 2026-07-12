@@ -1,0 +1,255 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Figure from '../../components/Figure.astro';
+import Icon from '../../components/Icon.astro';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { title, summary, blurb, status, area, metric, bullets, figure, figureCaption, tags, links } =
+  project.data;
+const { Content } = await render(project);
+
+const statusMeta: Record<string, { label: string; cls: string }> = {
+  live: { label: 'Live', cls: 'badge--live' },
+  'coming-soon': { label: 'Coming soon', cls: 'badge--soon' },
+  'in-progress': { label: 'Research', cls: 'badge--progress' },
+  planned: { label: 'Planned', cls: 'badge--planned' },
+};
+const s = statusMeta[status] ?? statusMeta.planned;
+---
+
+<BaseLayout title={title} description={summary ?? blurb}>
+  <article class="proj" data-area={area}>
+    <div class="container">
+      <a class="proj__back" href="/#gallery"><Icon name="arrow" size={16} /> All work</a>
+
+      <header class="proj__head reveal">
+        <span class:list={['badge', s.cls]}>{s.label}</span>
+        <h1 class="proj__title">{title}</h1>
+        <p class="proj__summary lead">{summary ?? blurb}</p>
+      </header>
+
+      <div class="proj__grid">
+        <div class="proj__main">
+          <Figure src={figure} alt={title} caption={figureCaption} area={area} loading="eager" />
+
+          {
+            bullets.length > 0 && (
+              <ul class="proj__bullets reveal">
+                {bullets.map((b) => (
+                  <li>{b}</li>
+                ))}
+              </ul>
+            )
+          }
+
+          <div class="proj__prose prose reveal">
+            <Content />
+          </div>
+        </div>
+
+        <aside class="proj__aside">
+          {
+            metric && (
+              <div class="metric reveal">
+                <span class="metric__value">{metric.value}</span>
+                <span class="metric__label">{metric.label}</span>
+              </div>
+            )
+          }
+
+          {
+            tags.length > 0 && (
+              <div class="proj__block reveal">
+                <h2 class="proj__blockhead">Methods</h2>
+                <ul class="proj__tags">
+                  {tags.map((t) => (
+                    <li>{t}</li>
+                  ))}
+                </ul>
+              </div>
+            )
+          }
+
+          {
+            links.length > 0 && (
+              <div class="proj__block reveal">
+                <h2 class="proj__blockhead">Links</h2>
+                <ul class="proj__links">
+                  {links.map((l) => (
+                    <li>
+                      <a href={l.href}>
+                        {l.label} <Icon name="arrow" size={15} />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
+          }
+        </aside>
+      </div>
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .proj {
+    --pa: var(--accent);
+    padding-block: var(--space-7) var(--space-9);
+  }
+  .proj[data-area='cosmology'] {
+    --pa: #6a58c8;
+  }
+  .proj[data-area='climate'] {
+    --pa: var(--amber-strong);
+  }
+  .proj[data-area='ocean'] {
+    --pa: #1f7fae;
+  }
+  .proj[data-area='timeseries'] {
+    --pa: var(--live);
+  }
+
+  .proj__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    margin-bottom: var(--space-5);
+  }
+  .proj__back :global(svg) {
+    transform: rotate(180deg);
+  }
+  .proj__back:hover {
+    color: var(--pa);
+    text-decoration: none;
+  }
+
+  .proj__head {
+    max-width: var(--measure);
+    margin-bottom: var(--space-7);
+  }
+  .proj__title {
+    margin-top: var(--space-3);
+    font-size: var(--step-4);
+  }
+  .proj__summary {
+    margin-top: var(--space-4);
+  }
+
+  .proj__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 16rem;
+    gap: var(--space-7);
+    align-items: start;
+  }
+  .proj__main > * + * {
+    margin-top: var(--space-6);
+  }
+
+  .proj__bullets {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .proj__bullets li {
+    position: relative;
+    padding-left: 1.5rem;
+    color: var(--ink-soft);
+  }
+  .proj__bullets li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 2px;
+    background: var(--pa);
+  }
+
+  .proj__aside {
+    position: sticky;
+    top: calc(var(--header-h) + var(--space-4));
+    display: grid;
+    gap: var(--space-5);
+  }
+  .metric {
+    display: grid;
+    gap: 0.25rem;
+    padding: var(--space-4) var(--space-5);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--pa) 7%, var(--paper));
+    border: 1px solid color-mix(in srgb, var(--pa) 25%, var(--border));
+  }
+  .metric__value {
+    font-family: var(--font-mono);
+    font-size: var(--step-3);
+    font-weight: 600;
+    color: var(--pa);
+    line-height: 1;
+  }
+  .metric__label {
+    font-size: var(--step--1);
+    color: var(--ink-soft);
+  }
+  .proj__blockhead {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: var(--space-3);
+    font-weight: 500;
+  }
+  .proj__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    padding: 0;
+  }
+  .proj__tags li {
+    font-size: 0.74rem;
+    color: var(--ink-soft);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.18rem 0.6rem;
+  }
+  .proj__links {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  .proj__links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+    font-size: var(--step-0);
+  }
+
+  @media (max-width: 820px) {
+    .proj__grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+    }
+    .proj__aside {
+      position: static;
+      grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    }
+  }
+</style>

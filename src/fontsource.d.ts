@@ -2,3 +2,4 @@
 // no bundled type declarations; declare them so `astro check` stays clean.
 declare module '@fontsource-variable/inter';
 declare module '@fontsource-variable/newsreader';
+declare module '@fontsource-variable/jetbrains-mono';

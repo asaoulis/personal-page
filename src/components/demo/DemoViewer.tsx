@@ -134,8 +134,8 @@ export default function DemoViewer() {
         )}
         <div className="demo-banner">
           {dataSource === 'live'
-            ? 'Live feed — F-net catalogue, updated automatically as new events are processed'
-            : 'Bundled preview snapshot — live feed unavailable, showing the static demo catalogue'}
+            ? 'Live feed: F-net catalogue, updated automatically as new events are processed'
+            : 'Bundled preview snapshot. Live feed unavailable, showing the static demo catalogue'}
         </div>
 
         <div className="demo-legend">

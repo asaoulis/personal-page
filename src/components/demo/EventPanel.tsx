@@ -110,7 +110,7 @@ export default function EventPanel({ feature, colorMode, dataBase }: Props) {
             title={
               typeof p.source_type === 'string'
                 ? undefined
-                : `P(outside ±10° near-DC lune box) = ${p.source_type.p_outside_dc_box_10.toFixed(2)} — labelled non-DC only at ≥0.95`
+                : `P(outside ±10° near-DC lune box) = ${p.source_type.p_outside_dc_box_10.toFixed(2)} (labelled non-DC only at ≥0.95)`
             }
           >
             {sourceTypeLabel(p.source_type)}
@@ -155,9 +155,9 @@ export default function EventPanel({ feature, colorMode, dataBase }: Props) {
                 <span className="demo-refs__badge">F-net reference pending</span>
               </p>
               <p className="demo-refs__pendingnote">
-                Inferred from the USGS origin within about an hour of the earthquake. NIED
-                publishes its F-net moment-tensor solution days to weeks later — the
-                catalogue comparison appears here automatically once it does.
+                Inferred from the USGS origin within about an hour of the earthquake. NIED publishes
+                its F-net moment-tensor solution days to weeks later, and the catalogue comparison
+                appears here automatically once it does.
               </p>
             </div>
           )}

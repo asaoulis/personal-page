@@ -1,6 +1,7 @@
 ---
 import '@fontsource-variable/inter';
 import '@fontsource-variable/newsreader';
+import '@fontsource-variable/jetbrains-mono';
 import '../styles/tokens.css';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
@@ -15,7 +16,7 @@ interface Props {
 }
 
 const { title, description = SITE.description, wide = false } = Astro.props;
-const pageTitle = title ? `${title} · ${SITE.title}` : `${SITE.title} — ${SITE.role}`;
+const pageTitle = title ? `${title} · ${SITE.title}` : `${SITE.title} · ${SITE.role}`;
 const canonical = new URL(Astro.url.pathname, SITE.url).href;
 const ogImage = new URL('/og.png', SITE.url).href;
 ---
@@ -33,7 +34,7 @@ const ogImage = new URL('/og.png', SITE.url).href;
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <meta name="generator" content={Astro.generator} />
     <meta name="color-scheme" content="light" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#0e1630" />
 
     <title>{pageTitle}</title>
     <meta name="description" content={description} />

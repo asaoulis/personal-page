@@ -3,114 +3,191 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import Icon from '../components/Icon.astro';
-import { SITE } from '../config';
+import { SOCIALS } from '../config';
+import { works, references } from '../data/works';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
-const featured = projects.slice(0, 3);
-
-const focus = [
-  {
-    title: 'Simulation-based inference',
-    body: 'Amortised neural posterior estimation that turns expensive forward simulators into fast, calibrated inference.',
-  },
-  {
-    title: 'Earthquake source characterisation',
-    body: 'Moment tensors and source parameters from waveforms — with honest, full posterior uncertainty.',
-  },
-  {
-    title: 'Generative & ML methods',
-    body: 'Neural compression, normalising flows and diffusion models, applied across geophysics, cosmology and climate.',
-  },
-];
+const refById = new Map(references.map((r) => [r.id, r]));
 ---
 
 <BaseLayout>
+  <!-- Hero: opens on the deep navy of the science, with the person front and centre. -->
   <section class="hero">
     <div class="container hero__inner">
-      <p class="eyebrow reveal">{SITE.affiliation}</p>
-      <h1 class="hero__name reveal" data-delay="60ms">{SITE.title}</h1>
-      <p class="hero__role reveal" data-delay="120ms">{SITE.role}</p>
-      <p class="lead hero__tagline reveal" data-delay="180ms">{SITE.tagline}</p>
-      <div class="hero__cta reveal" data-delay="240ms">
-        <a class="btn btn--primary" href="/demo/">
-          Explore the live demo <Icon name="arrow" size={18} />
-        </a>
-        <a class="btn btn--ghost" href="/projects/">View projects</a>
+      <div class="hero__text">
+        <p class="hero__eyebrow reveal">Machine learning for science</p>
+        <h1 class="hero__name reveal" data-delay="60ms">Alex Saoulis</h1>
+        <p class="hero__lead reveal" data-delay="120ms">
+          I develop deep-learning methods for Bayesian inference and generative modelling, applied
+          to problems in seismology, cosmology, and the climate sciences.
+        </p>
+        <div class="hero__cta reveal" data-delay="240ms">
+          <a class="btn btn--primary" href="/demo/">
+            Open the live earthquake monitor <Icon name="arrow" size={18} />
+          </a>
+          <a class="btn btn--onnavy" href="#work">Selected work</a>
+        </div>
+      </div>
+      <div class="hero__portrait reveal" data-delay="120ms">
+        <img
+          src="/figures/headshot.jpeg"
+          alt="Alex Saoulis"
+          width="320"
+          height="320"
+          decoding="async"
+        />
       </div>
     </div>
-    <div class="hero__wave" aria-hidden="true">
-      <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-        <path
-          d="M0 60 H120 l18 -34 l20 64 l16 -78 l22 96 l18 -52 l20 30 l24 -12 H520 l18 -40 l20 72 l16 -86 l22 104 l18 -58 l20 36 l24 -14 H1200"
-        ></path>
-      </svg>
+  </section>
+
+  <!-- Short bio strip -->
+  <section class="bio">
+    <div class="container bio__inner reveal">
+      <p>
+        I am completing a PhD at <strong>UCL</strong> on machine-learning inference for seismology and
+        cosmology, following an <strong>MPhys</strong> (first class) from <strong>Oxford</strong>.
+        Alongside my research I have applied machine learning in industry: climate-risk modelling at
+        Fathom, and two years of production engineering at a national particle accelerator facility.
+      </p>
     </div>
   </section>
 
-  <section class="section focus">
+  <!-- The body of work, written like a paper's abstract with linked citations. -->
+  <section id="work" class="section work">
     <div class="container">
-      <ul class="focus__grid">
-        {
-          focus.map((f, i) => (
-            <li class="focus__item reveal" data-delay={`${i * 80}ms`}>
-              <h2 class="focus__title">{f.title}</h2>
-              <p class="focus__body">{f.body}</p>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="container">
-      <header class="section-head reveal">
-        <p class="eyebrow">Selected work</p>
-        <h2>Projects</h2>
-        <p class="lead">
-          A live deployment of my research, alongside parallel threads in cosmology and climate.
-        </p>
+      <header class="work__head reveal">
+        <p class="eyebrow">Overview</p>
+        <h2>Research</h2>
       </header>
-      <ul class="cards-grid">
+
+      <ol class="work__list">
         {
-          featured.map((p, i) => (
-            <li class="reveal" data-delay={`${i * 90}ms`}>
+          works.map((w, i) => {
+            const Tag = w.project ? 'a' : 'div';
+            const attrs = w.project ? { href: w.project } : {};
+            return (
+              <li class="work__item reveal" data-delay={`${i * 60}ms`}>
+                <Tag class="work__go" {...attrs}>
+                  <span class="work__text">{w.text}</span>
+                  {w.cite.length > 0 && (
+                    <span class="work__cites">
+                      {w.cite.map((n) => {
+                        const r = refById.get(n);
+                        return (
+                          <span class="cite" title={r?.label}>
+                            [{n}]
+                          </span>
+                        );
+                      })}
+                    </span>
+                  )}
+                  {w.project && <Icon name="arrow" size={16} class="work__arrow" />}
+                </Tag>
+              </li>
+            );
+          })
+        }
+      </ol>
+
+      <div class="dive reveal">
+        <a class="dive__link" href="#gallery">See the projects <Icon name="arrow" size={18} /></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- The pretty gallery -->
+  <section id="gallery" class="section gallery">
+    <div class="container">
+      <ul class="gallery__grid">
+        {
+          projects.map((p, i) => (
+            <li class="reveal" data-delay={`${(i % 3) * 80}ms`}>
               <ProjectCard project={p} />
             </li>
           ))
         }
       </ul>
-      <p class="section-foot">
-        <a class="link-arrow" href="/projects/">All projects <Icon name="arrow" size={18} /></a>
+    </div>
+  </section>
+
+  <!-- References / selected papers -->
+  <section class="section refs">
+    <div class="container">
+      <header class="refs__head reveal">
+        <p class="eyebrow">References</p>
+        <h2>Selected papers</h2>
+      </header>
+      <ol class="refs__list">
+        {
+          references.map((r) => (
+            <li class="refs__item reveal">
+              <span class="refs__num">[{r.id}]</span>
+              <a href={r.href} class="refs__link">
+                {r.label}
+              </a>
+              <span class="refs__venue">{r.venue}</span>
+            </li>
+          ))
+        }
+      </ol>
+      <p class="refs__more reveal">
+        Full list on
+        {
+          SOCIALS.filter((s) => s.icon === 'scholar' || s.icon === 'github').map((s, i) => (
+            <>
+              {i > 0 && ' and '}
+              <a href={s.href}>{s.label}</a>
+            </>
+          ))
+        }.
       </p>
     </div>
   </section>
 </BaseLayout>
 
 <style>
+  /* ---- Hero (navy band) ---- */
   .hero {
-    position: relative;
-    overflow: hidden;
+    background:
+      radial-gradient(
+        80% 120% at 85% -10%,
+        color-mix(in srgb, var(--live) 22%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        70% 110% at 5% 110%,
+        color-mix(in srgb, var(--accent-on-navy) 20%, transparent),
+        transparent 50%
+      ),
+      linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
+    color: var(--on-navy);
     padding-block: clamp(var(--space-8), 12vh, var(--space-10)) var(--space-9);
   }
   .hero__inner {
-    position: relative;
-    z-index: 1;
-    max-width: 46rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-8);
+  }
+  .hero__eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-on-navy);
   }
   .hero__name {
-    margin-top: var(--space-2);
-  }
-  .hero__role {
     margin-top: var(--space-3);
+    color: #fff;
+    font-size: var(--step-5);
+  }
+  .hero__lead {
+    margin-top: var(--space-4);
+    max-width: 34ch;
     font-family: var(--font-serif);
     font-size: var(--step-2);
-    color: var(--ink-soft);
-    font-style: italic;
-  }
-  .hero__tagline {
-    margin-top: var(--space-4);
-    max-width: 38rem;
+    line-height: 1.32;
+    color: var(--on-navy);
   }
   .hero__cta {
     margin-top: var(--space-6);
@@ -118,77 +195,196 @@ const focus = [
     flex-wrap: wrap;
     gap: var(--space-3);
   }
-  .hero__wave {
-    position: absolute;
-    inset: auto 0 0 0;
-    height: 120px;
-    color: var(--accent);
-    opacity: 0.12;
-    pointer-events: none;
-    mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
-  }
-  .hero__wave svg {
-    width: 100%;
-    height: 100%;
-  }
-  .hero__wave path {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linejoin: round;
-    stroke-linecap: round;
+  .hero__portrait img {
+    width: clamp(9rem, 22vw, 15rem);
+    height: clamp(9rem, 22vw, 15rem);
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid color-mix(in srgb, var(--accent-on-navy) 40%, transparent);
+    box-shadow:
+      0 0 0 6px rgba(255, 255, 255, 0.04),
+      var(--shadow-lg);
   }
 
-  .focus {
-    border-block: 1px solid var(--border);
+  /* onnavy button variant, defined here where the navy context lives */
+  .hero :global(.btn--onnavy) {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--on-navy);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+  }
+  .hero :global(.btn--onnavy:hover) {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border-color: var(--accent-on-navy);
+    transform: translateY(-1px);
+  }
+
+  /* ---- Bio strip ---- */
+  .bio {
     background: var(--bg-subtle);
+    border-bottom: 1px solid var(--border);
   }
-  .focus__grid {
-    list-style: none;
-    padding: 0;
-    display: grid;
-    gap: var(--space-5);
-    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  }
-  .focus__title {
+  .bio__inner {
+    padding-block: var(--space-5);
+    max-width: 60ch;
     font-size: var(--step-1);
-    margin-bottom: var(--space-2);
-  }
-  .focus__body {
     color: var(--ink-soft);
-    font-size: var(--step-0);
+  }
+  .bio strong {
+    color: var(--ink);
+    font-weight: 600;
   }
 
-  .section-head {
+  /* ---- Work list (abstract with citations) ---- */
+  .work__head {
     max-width: var(--measure);
     margin-bottom: var(--space-6);
   }
-  .section-head h2 {
+  .work__head h2 {
     margin-top: var(--space-2);
   }
-  .section-head .lead {
-    margin-top: var(--space-3);
+  .work__list {
+    list-style: none;
+    padding: 0;
+    max-width: 62ch;
+    counter-reset: none;
   }
-  .cards-grid {
+  .work__item {
+    border-top: 1px solid var(--border);
+  }
+  .work__item:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+  .work__go {
+    display: block;
+    padding: var(--space-4) 2rem var(--space-4) 0;
+    position: relative;
+    color: var(--ink);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+  .work__go:hover {
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .work__text {
+    transition: color var(--dur) var(--ease);
+  }
+  a.work__go:hover .work__text {
+    color: var(--accent-strong);
+  }
+  .work__cites {
+    display: inline-flex;
+    gap: 0.15rem;
+    margin-left: 0.35rem;
+    vertical-align: baseline;
+  }
+  .cite {
+    font-family: var(--font-mono);
+    font-size: 0.72em;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .work__go :global(.work__arrow) {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(-4px);
+    opacity: 0;
+    color: var(--accent);
+    transition:
+      opacity var(--dur) var(--ease),
+      transform var(--dur) var(--ease);
+  }
+  .work__go:hover :global(.work__arrow) {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+
+  .dive {
+    margin-top: var(--space-6);
+  }
+  .dive__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .dive__link :global(svg) {
+    transform: rotate(90deg);
+    transition: transform var(--dur) var(--ease);
+  }
+  .dive__link:hover {
+    color: var(--accent-strong);
+    text-decoration: none;
+  }
+  .dive__link:hover :global(svg) {
+    transform: rotate(90deg) translateX(3px);
+  }
+
+  /* ---- Gallery ---- */
+  .gallery {
+    background: var(--bg-subtle);
+    border-block: 1px solid var(--border);
+  }
+  .gallery__grid {
     list-style: none;
     padding: 0;
     display: grid;
     gap: var(--space-5);
     grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
   }
-  .section-foot {
-    margin-top: var(--space-6);
+
+  /* ---- References ---- */
+  .refs__head {
+    margin-bottom: var(--space-5);
   }
-  .link-arrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
+  .refs__head h2 {
+    margin-top: var(--space-2);
+  }
+  .refs__list {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+    max-width: var(--measure);
+  }
+  .refs__item {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.25rem var(--space-2);
+    align-items: baseline;
+  }
+  .refs__num {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--accent);
+  }
+  .refs__link {
     font-weight: 500;
   }
-  .link-arrow :global(svg) {
-    transition: transform var(--dur) var(--ease);
+  .refs__venue {
+    grid-column: 2;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
   }
-  .link-arrow:hover :global(svg) {
-    transform: translateX(4px);
+  .refs__more {
+    margin-top: var(--space-5);
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+  }
+
+  @media (max-width: 720px) {
+    .hero__inner {
+      grid-template-columns: 1fr;
+      gap: var(--space-6);
+    }
+    .hero__portrait {
+      order: -1;
+    }
   }
 </style>

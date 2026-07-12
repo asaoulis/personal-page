@@ -86,7 +86,7 @@ export default function FallbackMap({ events, selectedId, onSelect, colorMode }:
                 }}
               >
                 <title>
-                  M{f.properties.mag} — {f.properties.region}
+                  M{f.properties.mag} · {f.properties.region}
                 </title>
               </circle>
               {sel && <circle r={r + 4} fill="none" stroke={col} strokeWidth={2} />}
@@ -94,7 +94,7 @@ export default function FallbackMap({ events, selectedId, onSelect, colorMode }:
           );
         })}
       </svg>
-      <div className="demo-fallbackmap__note">Schematic map — interactive basemap needs WebGL2</div>
+      <div className="demo-fallbackmap__note">Schematic map (interactive basemap needs WebGL2)</div>
     </div>
   );
 }

@@ -124,8 +124,8 @@ export default function MapView({ events, selectedId, onSelect, colorMode }: Pro
       const el = document.createElement('button');
       el.className = 'eq-marker';
       el.style.setProperty('--size', `${markerSize(mag)}px`);
-      el.setAttribute('aria-label', `M${mag} — ${region}`);
-      el.setAttribute('title', `M${mag} — ${region}`);
+      el.setAttribute('aria-label', `M${mag} · ${region}`);
+      el.setAttribute('title', `M${mag} · ${region}`);
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         onSelectRef.current(id);
