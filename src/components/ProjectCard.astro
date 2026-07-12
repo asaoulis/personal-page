@@ -6,12 +6,12 @@ interface Props {
   project: CollectionEntry<'projects'>;
 }
 const { project } = Astro.props;
-const { title, blurb, status, tags, href, featured, year } = project.data;
+const { title, blurb, status, area, metric, figure, href } = project.data;
 
 const statusMeta: Record<string, { label: string; cls: string }> = {
   live: { label: 'Live', cls: 'badge--live' },
   'coming-soon': { label: 'Coming soon', cls: 'badge--soon' },
-  'in-progress': { label: 'In progress', cls: 'badge--progress' },
+  'in-progress': { label: 'Research', cls: 'badge--progress' },
   planned: { label: 'Planned', cls: 'badge--planned' },
 };
 const s = statusMeta[status] ?? statusMeta.planned;
@@ -20,115 +20,164 @@ const Tag = href ? 'a' : 'article';
 const linkAttrs = href ? { href } : {};
 ---
 
-<Tag class:list={['card', { 'card--featured': featured, 'card--link': !!href }]} {...linkAttrs}>
-  <div class="card__top">
-    <span class:list={['badge', s.cls]}>{s.label}</span>
-    {year && <span class="card__year">{year}</span>}
+<Tag class:list={['tile', { 'tile--link': !!href }]} data-area={area} {...linkAttrs}>
+  <div class="tile__media">
+    {
+      figure ? (
+        <img class="tile__img" src={figure} alt="" loading="lazy" decoding="async" />
+      ) : (
+        <div class="tile__img tile__img--ph" aria-hidden="true" />
+      )
+    }
+    <span class:list={['badge', s.cls, 'tile__badge']}>{s.label}</span>
   </div>
 
-  <h3 class="card__title">{title}</h3>
-  <p class="card__blurb">{blurb}</p>
+  <div class="tile__body">
+    <h3 class="tile__title">{title}</h3>
+    <p class="tile__blurb">{blurb}</p>
 
-  {
-    tags.length > 0 && (
-      <ul class="card__tags">
-        {tags.map((t) => (
-          <li>{t}</li>
-        ))}
-      </ul>
-    )
-  }
-
-  {
-    href && (
-      <span class="card__cta">
-        {featured ? 'Open the live demo' : 'View project'}
-        <Icon name="arrow" size={18} />
-      </span>
-    )
-  }
+    <div class="tile__foot">
+      {
+        metric && (
+          <span class="chip">
+            <b>{metric.value}</b> {metric.label}
+          </span>
+        )
+      }
+      {
+        href && (
+          <span class="tile__cta">
+            {status === 'live' ? 'Open the monitor' : 'Read more'}
+            <Icon name="arrow" size={16} />
+          </span>
+        )
+      }
+    </div>
+  </div>
 </Tag>
 
 <style>
-  .card {
+  .tile {
+    /* per-area accent, defaulting to teal */
+    --tile-accent: var(--accent);
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
     height: 100%;
-    padding: var(--space-5);
     background: var(--paper);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
+    overflow: hidden;
     box-shadow: var(--shadow-sm);
     transition:
       transform var(--dur) var(--ease),
       box-shadow var(--dur) var(--ease),
       border-color var(--dur) var(--ease);
   }
-  .card--link {
+  .tile[data-area='cosmology'] {
+    --tile-accent: #6a58c8;
+  }
+  .tile[data-area='climate'] {
+    --tile-accent: var(--amber-strong);
+  }
+  .tile[data-area='ocean'] {
+    --tile-accent: #1f7fae;
+  }
+  .tile[data-area='timeseries'] {
+    --tile-accent: var(--live);
+  }
+  .tile--link {
     color: inherit;
   }
-  .card--link:hover {
+  .tile--link:hover {
     text-decoration: none;
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
-    border-color: var(--border-strong);
-  }
-  .card--featured {
-    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
-    background: linear-gradient(180deg, var(--accent-tint) 0%, var(--paper) 38%);
+    border-color: color-mix(in srgb, var(--tile-accent) 40%, var(--border));
   }
 
-  .card__top {
+  .tile__media {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    /* Solid white: the paper figures are transparent PNGs and need a plain
+       print-like backdrop, not the navy band. */
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+  .tile__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s var(--ease);
+  }
+  .tile__img--ph {
+    background:
+      radial-gradient(
+        120% 120% at 15% 0%,
+        color-mix(in srgb, var(--tile-accent) 45%, transparent),
+        transparent 55%
+      ),
+      linear-gradient(140deg, var(--navy), var(--navy-2));
+  }
+  .tile--link:hover .tile__img {
+    transform: scale(1.03);
+  }
+  .tile__badge {
+    position: absolute;
+    top: var(--space-3);
+    left: var(--space-3);
+    backdrop-filter: blur(6px);
+  }
+
+  .tile__body {
     display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    flex: 1;
+  }
+  .tile__title {
+    font-size: var(--step-1);
+    line-height: 1.15;
+  }
+  .tile__blurb {
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+  }
+  .tile__foot {
+    margin-top: auto;
+    padding-top: var(--space-3);
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
   }
-  .card__year {
-    font-family: var(--font-mono);
+  .chip {
     font-size: var(--step--1);
-    color: var(--ink-faint);
-  }
-  .card__title {
-    font-size: var(--step-2);
-  }
-  .card__blurb {
     color: var(--ink-soft);
-    font-size: var(--step-0);
-  }
-  .card__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    list-style: none;
-    padding: 0;
-    margin-top: auto;
-  }
-  .card__tags li {
-    font-size: 0.74rem;
-    color: var(--ink-soft);
-    background: var(--bg-subtle);
-    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--tile-accent) 8%, var(--bg-subtle));
+    border: 1px solid color-mix(in srgb, var(--tile-accent) 22%, var(--border));
     border-radius: 999px;
-    padding: 0.18rem 0.6rem;
+    padding: 0.2rem 0.6rem;
   }
-  .card__cta {
+  .chip b {
+    font-family: var(--font-mono);
+    color: var(--tile-accent);
+    font-weight: 600;
+  }
+  .tile__cta {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    margin-top: var(--space-2);
-    color: var(--accent);
+    gap: 0.35rem;
+    color: var(--tile-accent);
     font-weight: 500;
-    font-size: var(--step-0);
+    font-size: var(--step--1);
+    white-space: nowrap;
   }
-  .card__cta :global(svg) {
+  .tile__cta :global(svg) {
     transition: transform var(--dur) var(--ease);
   }
-  .card--link:hover .card__cta {
-    color: var(--accent-strong);
-  }
-  .card--link:hover .card__cta :global(svg) {
-    transform: translateX(4px);
+  .tile--link:hover .tile__cta :global(svg) {
+    transform: translateX(3px);
   }
 </style>

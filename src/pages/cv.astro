@@ -4,71 +4,89 @@ import PageHeader from '../components/PageHeader.astro';
 import Icon from '../components/Icon.astro';
 import { SITE } from '../config';
 
-// TODO: replace all entries below with the real CV. Structure is final.
-const education = [
+const experience = [
   {
-    when: '2021 — 2026',
-    what: 'PhD, Computational Seismology & Machine Learning',
-    where: SITE.affiliation,
-    note: 'Simulation-based inference for earthquake source characterisation.',
+    when: '2024–2026',
+    what: 'Machine Learning Consultant',
+    where: 'Fathom',
+    note: 'Sole machine-learning specialist on a diffusion-based precipitation downscaling system for flood risk. Developed the full geospatial pipeline (ERA5, MSWEP) and delivered at continental-US scale within a 6-month timeline, then consulted part-time. Paper under review at JGR.',
   },
   {
-    when: '2017 — 2021',
-    what: 'MSci, Physics',
-    where: 'University (TODO)',
-    note: 'First-class honours. TODO: details.',
+    when: '2020–2022',
+    what: 'Software Engineer & ML Graduate',
+    where: 'ISIS Neutron and Muon Source, STFC',
+    note: 'Two years of production ML on a live accelerator control system: anomaly detection and forecasting on continuous signals, plus a live Bayesian-optimisation system for beam tuning. Python and C++, Docker, CI/CD.',
   },
 ];
 
-const experience = [
+const education = [
   {
-    when: '2024 — present',
-    what: 'Research thread: SBI for cosmology',
-    where: 'Collaboration (TODO)',
-    note: 'Transferring neural-compression + flow methods to cosmological inference.',
+    when: '2022–2026',
+    what: 'PhD, Data Intensive Science',
+    where: 'University College London',
+    note: 'Machine-learning Bayesian inference across seismology and cosmology. Physics & Astronomy, Data Intensive Science CDT. Submission expected late 2026.',
   },
   {
-    when: '2022 — 2023',
-    what: 'Role / internship (TODO)',
-    where: 'Organisation (TODO)',
-    note: 'TODO: one-line description of contributions.',
+    when: '2016–2020',
+    what: 'MPhys Physics, First-Class Honours',
+    where: 'University of Oxford',
+    note: 'St Peter’s College. Dissertation on numerical methods for squeezed, driven quantum states.',
   },
 ];
 
 const publications = [
   {
-    cite: 'Saoulis, A. et al. (2026). Amortised moment-tensor inference with neural posterior estimation. Journal (TODO).',
-    href: '#',
+    cite: 'Full-waveform earthquake source inversion using simulation-based inference. Geophysical Journal International 241(3), 2025.',
+    href: 'https://arxiv.org/abs/2410.23238',
   },
   {
-    cite: 'Saoulis, A. et al. (2025). Neural compression for simulation-based seismology. Proceedings (TODO).',
-    href: '#',
+    cite: 'Transfer learning for multifidelity simulation-based inference in cosmology. MNRAS 542(4), 2025.',
+    href: 'https://arxiv.org/abs/2505.21215',
+  },
+  {
+    cite: 'Field-level weak-lensing cosmology with <100 simulations using multifidelity SBI. Preprint, 2026.',
+    href: 'https://arxiv.org/abs/2606.23346',
+  },
+  {
+    cite: 'Improving moment tensor solutions under Earth-structure uncertainty with SBI. Preprint, 2026.',
+    href: 'https://arxiv.org/abs/2603.18925',
+  },
+  {
+    cite: 'Semantic segmentation for feature detection in ocean-bottom seismometer data. Seismica 5(1), 2026.',
+    href: 'https://doi.org/10.26443/seismica.v5i1.1821',
+  },
+  {
+    cite: 'Diffusion models for climate data surpass alternative statistical downscaling techniques. Preprint, 2025 (JGR under review).',
+    href: 'https://essopenarchive.org/doi/full/10.22541/essoar.173869444.40681416/v1',
   },
 ];
 
 const talks = [
-  { when: '2026', what: 'Invited talk — conference (TODO)' },
-  { when: '2025', what: 'Contributed talk / poster (TODO)' },
+  { when: '2025', what: 'Invited oral: AGU 2025; ENIGMA Collaboration 2025' },
+  { when: '2023/24', what: 'EGU General Assembly: SBI source inversion; diffusion downscaling' },
 ];
 
 const skills = [
   'Python',
   'PyTorch',
   'Simulation-based inference',
-  'Bayesian methods',
-  'ObsPy / seismology',
-  'HPC / SLURM',
+  'Bayesian inference',
   'Normalising flows',
-  'Diffusion models',
-  'Scientific visualisation',
+  'Diffusion & generative models',
+  'CNNs / Vision Transformers',
+  'Semantic segmentation',
+  'Time-series analysis',
+  'Slurm / MPI / HPC',
+  'Docker / CI/CD',
+  'ERA5 / MSWEP geospatial data',
 ];
 ---
 
 <BaseLayout title="CV" description={`Curriculum vitae of ${SITE.title}.`}>
   <PageHeader
-    eyebrow="Curriculum Vitae"
+    eyebrow="Curriculum vitae"
     title="CV"
-    lead={`A short overview of ${SITE.title}'s education, experience and research output.`}
+    lead="Machine-learning researcher completing a PhD in probabilistic and generative deep learning, with two years of production engineering experience."
   />
 
   <section class="section">
@@ -77,10 +95,16 @@ const skills = [
         <a class="btn btn--primary" href="/cv.pdf" download>
           Download PDF <Icon name="arrow" size={18} />
         </a>
-        <p class="muted cv__note">The PDF is a placeholder until the full CV is finalised.</p>
       </div>
 
       <div class="cv__col">
+        <section class="cv__section reveal">
+          <h2>Skills</h2>
+          <ul class="skills">
+            {skills.map((s) => <li>{s}</li>)}
+          </ul>
+        </section>
+
         <section class="cv__section reveal">
           <h2>Education</h2>
           <ul class="timeline">
@@ -119,6 +143,9 @@ const skills = [
 
         <section class="cv__section reveal">
           <h2>Selected publications</h2>
+          <p class="cv__pubnote muted">
+            Six first-author papers, two in Q1 journals. Full list on Google Scholar.
+          </p>
           <ul class="pub-list">
             {
               publications.map((p) => (
@@ -145,13 +172,6 @@ const skills = [
             }
           </ul>
         </section>
-
-        <section class="cv__section reveal">
-          <h2>Skills</h2>
-          <ul class="skills">
-            {skills.map((s) => <li>{s}</li>)}
-          </ul>
-        </section>
       </div>
     </div>
   </section>
@@ -168,9 +188,6 @@ const skills = [
     align-items: center;
     gap: var(--space-3) var(--space-4);
   }
-  .cv__note {
-    font-size: var(--step--1);
-  }
   .cv__col {
     display: grid;
     gap: var(--space-7);
@@ -180,6 +197,10 @@ const skills = [
     font-size: var(--step-2);
     padding-bottom: var(--space-2);
     border-bottom: 1px solid var(--border);
+    margin-bottom: var(--space-4);
+  }
+  .cv__pubnote {
+    font-size: var(--step--1);
     margin-bottom: var(--space-4);
   }
 

@@ -7,34 +7,34 @@ const pipeline = [
   {
     n: '01',
     t: 'Monitor',
-    d: 'A scheduled worker polls two feeds: USGS origins for near-live discovery (minutes after an earthquake) and the NIED F-net moment-tensor catalogue for the authoritative reference solutions. Events outside the model’s training region or deeper than 80 km are filtered out.',
+    d: 'A scheduled worker watches two public feeds: USGS for new earthquakes (within minutes) and the NIED F-net catalogue for the official reference solutions. Events outside the model’s training region, or deeper than 80 km, are skipped.',
   },
   {
     n: '02',
     t: 'Infer',
-    d: 'It fetches waveforms and runs the trained neural posterior estimator on CPU, producing a full moment-tensor posterior in seconds.',
+    d: 'For each event, the worker downloads the waveforms and runs the neural network, producing the full range of plausible source mechanisms in seconds, on an ordinary CPU.',
   },
   {
     n: '03',
     t: 'Publish',
-    d: 'Beachballs, source-type lune plots and a compact results JSON are rendered and committed to a static store — no live model server in the request path.',
+    d: 'The plots and a small results file are precomputed and stored. Nothing runs a model while you browse.',
   },
   {
     n: '04',
     t: 'Explore',
-    d: 'This viewer reads the precomputed month-long window. The time-slider is pure client-side filtering, so scrubbing is instant.',
+    d: 'This viewer reads the precomputed month-long window. The time slider filters entirely in your browser, so scrubbing is instant.',
   },
 ];
 ---
 
 <BaseLayout
-  title="Live Demo"
-  description="Interactive preview of a real-time earthquake source-inference monitor for the Japan F-net region."
+  title="Live earthquake monitor: Japan"
+  description="A live earthquake monitor for Japan: deep-learning models infer each earthquake’s faulting orientation and type from its seismic waveforms, with calibrated uncertainties."
 >
   <PageHeader
-    eyebrow="Live demo · preview"
-    title="Real-time earthquake source inference"
-    lead="A continuously-updating monitor for the Japan (F-net) region. Each event is run through a neural posterior estimator; click a marker to compare the inferred moment tensor with the catalogue solutions. Drag the two-handle slider to select a date range over the catalogue."
+    eyebrow="Live"
+    title="Live earthquake monitor: Japan"
+    lead="When an earthquake happens in Japan, this monitor picks up the seismic recordings and a neural network estimates how the ground slipped: the orientation of the fault and the type of movement, with an honest range of uncertainty. Select a marker to compare the model with the official catalogue solution, and use the slider to move through the month."
   />
 
   <div class="container container--wide">
@@ -46,22 +46,21 @@ const pipeline = [
   <section class="section how">
     <div class="container">
       <header class="section-head reveal">
-        <p class="eyebrow">How it works</p>
-        <h2>A decoupled, precompute-first pipeline</h2>
+        <p class="eyebrow">What is this?</p>
+        <h2>Deep learning, reading earthquakes as they happen</h2>
         <p class="lead">
-          The interface above runs on the <strong>real Japan earthquake feed</strong>; the posterior
-          clouds are sampled from the trained neural posterior estimator (NPE) for Japan F-net events,
-          covering June 2026 onward. Freshness is two-tier: new events are discovered from
-          <strong>USGS origins and inferred within about an hour</strong> of the earthquake (marked
-          “F-net reference pending”), and when NIED publishes its F-net moment-tensor solution —
-          typically days to a few weeks later — the event is re-inferred with the refined JMA location
-          and the F-net reference attached for comparison. The pipeline itself processes each event in
-          about two minutes, following a deliberately simple, low-cost architecture — described in full
-          in the project's architecture document. Source-type labels are probabilistic: an event is
-          only called non-double-couple when &gt;95% of its posterior mass falls outside a ±10°
-          region around pure double-couple on the source-type lune — and for smaller earthquakes even
-          these isotropic/CLVD indications are model-derived and cannot be checked against the F-net
-          reference, which is constrained to be purely deviatoric.
+          Each seismometer records the ground shaking as a long, noisy signal. A small neural
+          network (a CNN) reads each station’s recording, and a transformer combines the results
+          across the whole network into a compact summary. From that summary, the model predicts the
+          earthquake’s faulting orientation and type, as a probability distribution rather than a
+          single answer.
+        </p>
+        <p class="lead">
+          The interesting part is the uncertainty. The model is trained on hundreds of thousands of
+          simulated earthquakes that include the things we genuinely do not know: exactly where the
+          source was, and what the Earth’s interior looks like along the way. Having seen those
+          effects in training, it gives more accurate estimates of the earthquake itself, and it is
+          honest about what the data cannot pin down.
         </p>
       </header>
 
@@ -79,16 +78,28 @@ const pipeline = [
 
       <div class="how__note reveal">
         <p>
-          <strong>Reused from my research library.</strong> The moment-tensor conventions, beachball rendering
-          and source-type lune plots come straight from the seismology codebase that powers my published
-          inversions — the web demo simply serves what the inference pipeline already produces.
-        </p>
-        <p class="muted">
-          The scheduled worker, trained NPE and Japan-region Green's-function database are all live;
-          if the feed is ever unreachable the viewer falls back to a bundled preview snapshot so the
-          page still renders.
+          The plots and conventions come from the same seismology codebase as my published
+          inversions. The page simply serves what the inference pipeline produces.
         </p>
       </div>
+
+      <aside class="disclaimer reveal" aria-label="Disclaimer and data sources">
+        <h2 class="disclaimer__head">A demonstration, not a catalogue</h2>
+        <p>
+          This monitor runs automatically. Events and solutions are not manually inspected, and
+          occasional poor solutions are expected, for example when data are missing or noisy. Do not
+          treat the results as an earthquake catalogue; for authoritative solutions, use the agency
+          catalogues below.
+        </p>
+        <p class="disclaimer__sources">
+          Data sources: waveforms and reference moment-tensor solutions from{' '}
+          <a href="https://www.fnet.bosai.go.jp/">NIED F-net</a> (National Research Institute for Earth
+          Science and Disaster Resilience, Japan); event discovery from the{' '}
+          <a href="https://earthquake.usgs.gov/earthquakes/feed/">USGS earthquake feed</a>. The
+          model is trained on waveforms simulated from 1-D Earth models with{' '}
+          <a href="https://github.com/krischer/instaseis">Instaseis</a>/AxiSEM.
+        </p>
+      </aside>
     </div>
   </section>
 </BaseLayout>
@@ -154,5 +165,26 @@ const pipeline = [
     margin-top: var(--space-6);
     display: grid;
     gap: var(--space-3);
+  }
+
+  .disclaimer {
+    max-width: var(--measure);
+    margin-top: var(--space-7);
+    padding: var(--space-5);
+    border: 1px solid var(--border-strong, var(--border));
+    border-radius: var(--radius-lg);
+    background: var(--paper);
+    display: grid;
+    gap: var(--space-3);
+  }
+  .disclaimer__head {
+    font-size: var(--step-1);
+  }
+  .disclaimer p {
+    color: var(--ink-soft);
+    font-size: var(--step-0);
+  }
+  .disclaimer__sources {
+    font-size: var(--step--1);
   }
 </style>

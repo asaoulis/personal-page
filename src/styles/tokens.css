@@ -1,8 +1,10 @@
 /* ============================================================================
-   Design tokens — clean minimal-academic
-   Ink text on paper, a single restrained deep-blue accent, Newsreader display
-   serif + Inter body. Fluid type scale. Light theme only (dark is a future
-   enhancement; tokens are namespaced so it can be added without churn).
+   Design tokens — "scientific plasma" identity
+   Warm-neutral paper with a deep indigo-navy hero band, drawn from the colour
+   maps in Alex's own figures: navy base, teal/cyan mids, amber/gold highs, and
+   a magenta accent reserved for the live signal. Newsreader display serif +
+   Inter body + a mono utility face for citation chips and metric readouts.
+   Light theme; tokens namespaced so a dark mode can be layered later.
    ========================================================================== */
 
 :root {
@@ -10,23 +12,39 @@
   --font-sans:
     'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-serif: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
-  --font-mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', 'Menlo', monospace;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
 
-  /* ---- Colour: neutrals (ink) -------------------------------------------- */
-  --paper: #ffffff;
-  --bg-subtle: #f7f8fa;
-  --bg-sunken: #eef1f5;
-  --ink: #171b23; /* near-black, primary text */
-  --ink-soft: #4d5564; /* secondary text */
-  --ink-faint: #79818f; /* captions, meta */
-  --border: #e4e8ee;
-  --border-strong: #d2d8e0;
+  /* ---- Colour: neutrals (cool ink on cool, teal-tinted paper) ------------ */
+  --paper: #fafcfd; /* cool near-white with a blue hint */
+  --bg-subtle: #eff5f6; /* raised strips / cards on paper */
+  --bg-sunken: #e3edef; /* sunken wells */
+  --ink: #16202b; /* deep navy-slate, primary text */
+  --ink-soft: #4a566a; /* secondary text */
+  --ink-faint: #7c8797; /* captions, meta */
+  --border: #dce7e9; /* hairlines on paper */
+  --border-strong: #c4d4d7;
 
-  /* ---- Colour: accent (deep blue) ---------------------------------------- */
-  --accent: #2547ad;
-  --accent-strong: #1c3a93; /* hover / active */
-  --accent-tint: #eef2fc; /* faint fill behind accents */
+  /* ---- Colour: deep navy band (the figures' base) ------------------------ */
+  --navy: #0e1630; /* hero band background */
+  --navy-2: #141d3d; /* raised on navy */
+  --on-navy: #eef1fb; /* text on navy */
+  --on-navy-soft: #9aa6c8; /* secondary text on navy */
+
+  /* ---- Colour: primary accent (teal / cyan) ------------------------------ */
+  --accent: #0e8a8f; /* teal, the segmentation cyan calmed down */
+  --accent-strong: #0a6c70; /* hover / active */
+  --accent-tint: #e3f1f0; /* faint fill behind accents on paper */
+  --accent-on-navy: #4fd6d0; /* teal that pops on the navy band */
   --accent-contrast: #ffffff; /* text on accent */
+
+  /* ---- Colour: secondary accent (amber / gold, the "hot" end) ------------ */
+  --amber: #e0912f;
+  --amber-strong: #a8630f; /* darkened for AA on the small metric chip */
+  --amber-tint: #fbefdb;
+
+  /* ---- Colour: live signal (magenta-coral, from the plasma map) ---------- */
+  --live: #d8456b;
+  --live-glow: #ff6f9c;
 
   /* ---- Fluid type scale (1.20 ratio, clamps to viewport) ----------------- */
   --step--1: clamp(0.83rem, 0.79rem + 0.18vw, 0.94rem);
@@ -59,9 +77,9 @@
   --radius-sm: 0.375rem;
   --radius: 0.625rem;
   --radius-lg: 1rem;
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow: 0 4px 12px rgba(16, 24, 40, 0.06), 0 2px 4px rgba(16, 24, 40, 0.04);
-  --shadow-lg: 0 18px 40px rgba(16, 24, 40, 0.1), 0 6px 12px rgba(16, 24, 40, 0.06);
+  --shadow-sm: 0 1px 2px rgba(14, 22, 48, 0.04), 0 1px 3px rgba(14, 22, 48, 0.06);
+  --shadow: 0 4px 12px rgba(14, 22, 48, 0.07), 0 2px 4px rgba(14, 22, 48, 0.05);
+  --shadow-lg: 0 18px 40px rgba(14, 22, 48, 0.12), 0 6px 12px rgba(14, 22, 48, 0.07);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --dur: 220ms;
 }

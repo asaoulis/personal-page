@@ -1,0 +1,62 @@
+---
+/**
+ * A framed, captioned figure. Placeholder-friendly: if `src` is missing it
+ * renders a tasteful gradient panel instead of a broken image.
+ */
+interface Props {
+  src?: string;
+  alt?: string;
+  caption?: string;
+  area?: string;
+  loading?: 'lazy' | 'eager';
+}
+const { src, alt = '', caption, area = 'seismology', loading = 'lazy' } = Astro.props;
+---
+
+<figure class="figure" data-area={area}>
+  {
+    src ? (
+      <img class="figure__img" src={src} alt={alt} loading={loading} decoding="async" />
+    ) : (
+      <div class="figure__placeholder" role="img" aria-label={alt || 'Figure coming soon'}>
+        <span>Figure coming soon</span>
+      </div>
+    )
+  }
+  {caption && <figcaption class="figure__cap">{caption}</figcaption>}
+</figure>
+
+<style>
+  .figure {
+    margin: 0;
+  }
+  .figure__img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    /* Solid white behind transparent-PNG paper figures. */
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+  }
+  .figure__placeholder {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    border-radius: var(--radius);
+    border: 1px dashed var(--border-strong);
+    background:
+      radial-gradient(120% 120% at 20% 0%, var(--accent-tint), transparent 60%),
+      linear-gradient(135deg, var(--bg-subtle), var(--bg-sunken));
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.04em;
+  }
+  .figure__cap {
+    margin-top: var(--space-2);
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    line-height: 1.5;
+  }
+</style>

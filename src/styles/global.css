@@ -211,19 +211,19 @@ a:hover {
   background: var(--bg-subtle);
 }
 .badge--live {
-  color: #0a7d4d;
-  border-color: #b6e6cf;
-  background: #ecfbf3;
+  color: var(--live);
+  border-color: color-mix(in srgb, var(--live) 30%, white);
+  background: color-mix(in srgb, var(--live) 8%, white);
 }
 .badge--soon {
   color: var(--accent-strong);
-  border-color: #c6d4f4;
+  border-color: color-mix(in srgb, var(--accent) 30%, white);
   background: var(--accent-tint);
 }
 .badge--progress {
-  color: #9a5b00;
-  border-color: #f0dcb4;
-  background: #fdf6e8;
+  color: var(--amber-strong);
+  border-color: color-mix(in srgb, var(--amber) 35%, white);
+  background: var(--amber-tint);
 }
 .badge--planned {
   color: var(--ink-faint);
@@ -234,6 +234,27 @@ a:hover {
   height: 0.45em;
   border-radius: 999px;
   background: currentColor;
+}
+/* The live badge's dot pulses like a signal. */
+.badge--live::before {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 60%, transparent);
+  animation: live-pulse 2.4s var(--ease) infinite;
+}
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 0.5em transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .badge--live::before {
+    animation: none;
+  }
 }
 
 /* ---- Accessibility ------------------------------------------------------- */

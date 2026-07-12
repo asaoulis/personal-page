@@ -1,19 +1,36 @@
 ---
-title: 'Real-time earthquake source inference'
-blurb: "A live, map-based demo that monitors the Japan (F-net) region, runs simulation-based inference on resolvable events (~M≥3.5), and shows the model's moment-tensor posterior against catalogue solutions — beachballs, source-type lune, and uncertainty, all in the browser."
-status: 'coming-soon'
-tags: ['Simulation-based inference', 'Seismology', 'Moment tensors', 'PyTorch']
+title: 'Live earthquake monitor: Japan'
+blurb: 'Machine learning that characterises earthquake sources from their seismic waveforms with calibrated uncertainties, running live on the Japan seismic network.'
+summary: 'A live, map-based monitor of the Japan (F-net) region. For each resolvable earthquake, deep-learning models compress the recorded waveforms and infer the source mechanism from them, together with a calibrated estimate of the uncertainty.'
+status: 'live'
+area: 'seismology'
+metric: { value: '<1 s', label: 'to a full source solution with calibrated uncertainty' }
+bullets:
+  [
+    'Standard analysis assumes Gaussian noise and can underestimate uncertainty by up to three times. This model learns the error distribution from the data.',
+    'It returns a full posterior distribution over the source parameters, showing what the data does and does not constrain.',
+    'A scheduled worker monitors the catalogue, runs the model on each new event, and precomputes the result, so the viewer remains responsive without a model server in the request path.',
+  ]
+figure: '/figures/earthquake.png'
+figureCaption: 'Waves from one earthquake recorded across a network of seismometers. Figure from the source-inversion paper.'
+tags: ['Simulation-based inference', 'Normalising flows', 'PyTorch', 'Seismology']
+links:
+  [
+    { label: 'Open the live monitor', href: '/demo/' },
+    { label: 'Paper (GJI 2025)', href: 'https://arxiv.org/abs/2410.23238' },
+    { label: 'Code', href: 'https://github.com/asaoulis/seismo-sbi' },
+  ]
 order: 1
 featured: true
 href: '/demo/'
 year: '2026'
 ---
 
-The cornerstone of this site: a neural posterior estimator trained to infer earthquake
-moment tensors directly from waveforms, deployed as a continuously-updating regional monitor.
-A scheduled worker watches the catalogue, runs CPU inference on each new resolvable event, and
-publishes a compact, precomputed result — so the interactive viewer (map + diagnostic panels +
-month-long time-slider) stays fast without a model server in the request path.
+The model is a neural posterior estimator: it learns to map recorded waveforms to the
+distribution of earthquake sources that could have produced them. Trained once on simulated
+earthquakes, it then infers a new event in a fraction of a second.
 
-See `docs/ARCHITECTURE.md` for the full design. The live data pipeline is the next milestone;
-the current `/demo` page previews the interface with representative mock data.
+The live monitor applies this to real data. It follows the F-net catalogue, runs the model on
+each resolvable event (around magnitude 3.5 and above), and compares the result with the official
+catalogue solution: beachball, source-type lune, and the spread of the posterior. Each result is
+precomputed and served as a small file, so the viewer remains responsive.
