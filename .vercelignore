@@ -1,0 +1,5 @@
+# The live event store is published to the `data` branch and proxied via the
+# vercel.json /live-data/ rewrite. A local public/live-data/ (gitignored, written
+# by manual fetch_fnet runs) must NEVER ship — a static file there shadows the
+# rewrite and freezes the demo to a stale snapshot. Exclude it from every deploy.
+public/live-data/
