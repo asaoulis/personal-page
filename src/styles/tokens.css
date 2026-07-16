@@ -26,17 +26,20 @@
   --border: #e5dfcd; /* hairlines on paper */
   --border-strong: #d2c9ae;
 
-  /* ---- Colour: deep navy band (the figures' base) ------------------------ */
-  --navy: #0e1630; /* hero band background */
-  --navy-2: #141d3d; /* raised on navy */
-  --on-navy: #eef1fb; /* text on navy */
-  --on-navy-soft: #9aa6c8; /* secondary text on navy */
+  /* ---- Colour: cosmos-purple band (the figures' base) -------------------- */
+  /* Was a deep navy + clinical teal; now the "Alt 2" cosmos scheme — a deep
+     purple ground, red focal-mechanism figures, lavender text and a brighter
+     violet accent. The paper body and warm secondaries (amber/live) stay. */
+  --navy: #340059; /* hero band background (cosmos purple) */
+  --navy-2: #45106e; /* raised on purple */
+  --on-navy: #b8b8ff; /* lavender text on purple */
+  --on-navy-soft: #9a9ad0; /* secondary text on purple */
 
-  /* ---- Colour: primary accent (teal / cyan) ------------------------------ */
-  --accent: #0e8a8f; /* teal, the segmentation cyan calmed down */
-  --accent-strong: #0a6c70; /* hover / active */
-  --accent-tint: #e7efe6; /* faint fill behind accents, warmed */
-  --accent-on-navy: #4fd6d0; /* teal that pops on the navy band */
+  /* ---- Colour: primary accent (violet) ----------------------------------- */
+  --accent: #9c52f2; /* brighter violet */
+  --accent-strong: #7d38c9; /* hover / active */
+  --accent-tint: #efe8fb; /* faint fill behind accents */
+  --accent-on-navy: #9c52f2; /* violet that pops on the purple band */
   --accent-contrast: #ffffff; /* text on accent */
 
   /* ---- Colour: secondary accent (amber / gold, the "hot" end) ------------ */

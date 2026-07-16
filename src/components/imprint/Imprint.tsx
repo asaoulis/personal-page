@@ -1,5 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { mtFromSdr, randomSdr, renderBeachball } from '../../lib/mech';
+import { SCHEMES, type HeroPalette } from '../../styles/schemes';
+
+type ImprintPalette = HeroPalette['imprint'];
+const rgbCss = (c: [number, number, number]) => `rgb(${c[0]},${c[1]},${c[2]})`;
+const rgbaCss = (c: [number, number, number], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
 /**
  * "Imprint" — block-print pattern papers in the spirit of Cambridge Imprint,
@@ -20,9 +25,9 @@ type Domain = 'seismology' | 'cosmology' | 'signals';
 const TAU = Math.PI * 2;
 
 const CAPTION: Record<Domain, string> = {
-  seismology: 'blockprint no.1 — source solutions',
-  cosmology: 'blockprint no.2 — cosmic shear',
-  signals: 'blockprint no.3 — recorded signals',
+  seismology: 'no.1 — source solutions',
+  cosmology: 'no.2 — cosmic shear',
+  signals: 'no.3 — recorded signals',
 };
 
 function mulberry32(a: number) {
@@ -43,12 +48,13 @@ function drawCalico(
   h: number,
   seed: number,
   dpr: number,
+  im: ImprintPalette,
 ) {
   const rnd = mulberry32(seed);
-  ctx.fillStyle = '#9fa03c'; // olive ground
+  ctx.fillStyle = im.calico; // block-print ground
   ctx.fillRect(0, 0, w, h);
-  const CREAM: [number, number, number] = [242, 236, 217];
-  const INK: [number, number, number] = [38, 43, 69];
+  const CREAM = im.cream;
+  const INK = im.darkInk;
   const sp = 52;
   let row = 0;
   for (let y = sp * 0.55; y < h + 14; y += sp * 0.82, row++) {
@@ -67,7 +73,7 @@ function drawCalico(
         ctx.save();
         ctx.translate(x + jx, y + jy);
         ctx.rotate(TAU / 8);
-        ctx.fillStyle = 'rgb(38,43,69)';
+        ctx.fillStyle = rgbCss(INK);
         const d = 3.4 + rnd() * 2.4;
         ctx.fillRect(-d / 2, -d / 2, d, d);
         ctx.restore();
@@ -116,11 +122,17 @@ function drawMeadow(
   }
 }
 
-function drawWavetrain(ctx: CanvasRenderingContext2D, w: number, h: number, seed: number) {
+function drawWavetrain(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  seed: number,
+  im: ImprintPalette,
+) {
   const rnd = mulberry32(seed);
-  ctx.fillStyle = '#a84a37'; // madder ground
+  ctx.fillStyle = im.wave; // block-print ground
   ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = 'rgba(242,236,217,0.92)';
+  ctx.strokeStyle = rgbaCss(im.cream, 0.92);
   ctx.lineWidth = 1.5;
   for (let y = 18; y < h; y += 26) {
     const bursts: { x: number; a: number; f: number }[] = [];
@@ -144,7 +156,7 @@ function drawWavetrain(ctx: CanvasRenderingContext2D, w: number, h: number, seed
   }
 }
 
-function paint(cv: HTMLCanvasElement, domain: Domain, seed: number) {
+function paint(cv: HTMLCanvasElement, domain: Domain, seed: number, im: ImprintPalette) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const r = cv.getBoundingClientRect();
   if (r.width === 0 || r.height === 0) return;
@@ -153,20 +165,28 @@ function paint(cv: HTMLCanvasElement, domain: Domain, seed: number) {
   const ctx = cv.getContext('2d');
   if (!ctx) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (domain === 'seismology') drawCalico(ctx, r.width, r.height, seed, dpr);
-  else if (domain === 'cosmology') drawMeadow(ctx, r.width, r.height, seed);
-  else drawWavetrain(ctx, r.width, r.height, seed);
+  if (domain === 'seismology') drawCalico(ctx, r.width, r.height, seed, dpr, im);
+  else if (domain === 'cosmology')
+    drawMeadow(ctx, r.width, r.height, seed, im.meadow, rgbaCss(im.cream, 0.94));
+  else drawWavetrain(ctx, r.width, r.height, seed, im);
 }
 
 /* ---- component ----------------------------------------------------------- */
 
-export default function Imprint({ variant = 'plate' }: { variant?: 'plate' | 'band' }) {
+export default function Imprint({
+  variant = 'plate',
+  palette,
+}: {
+  variant?: 'plate' | 'band';
+  palette?: HeroPalette;
+}) {
   const cvRef = useRef<HTMLCanvasElement | null>(null);
   const capRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const cv = cvRef.current;
     if (!cv) return;
+    const im = (palette ?? SCHEMES.default).imprint;
 
     if (variant === 'band') {
       // quiet divider: shear meadow, olive on the page's warm cream
@@ -180,7 +200,7 @@ export default function Imprint({ variant = 'plate' }: { variant?: 'plate' | 'ba
         const ctx = cv.getContext('2d');
         if (!ctx) return;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        drawMeadow(ctx, r.width, r.height, seed, '#f4f0e4', 'rgba(159,160,60,0.5)', 0.8);
+        drawMeadow(ctx, r.width, r.height, seed, im.bandGround, im.bandInk, 0.8);
       };
       draw();
       const ro = new ResizeObserver(draw);
@@ -195,7 +215,7 @@ export default function Imprint({ variant = 'plate' }: { variant?: 'plate' | 'ba
     let prev: HTMLCanvasElement | null = null;
 
     const redraw = () => {
-      paint(cv, domain, seed);
+      paint(cv, domain, seed, im);
       if (capRef.current) capRef.current.textContent = CAPTION[domain];
     };
     const switchTo = (d: Domain) => {
@@ -248,7 +268,7 @@ export default function Imprint({ variant = 'plate' }: { variant?: 'plate' | 'ba
       cancelAnimationFrame(fading);
       ro.disconnect();
     };
-  }, [variant]);
+  }, [variant, palette]);
 
   if (variant === 'band') return <canvas ref={cvRef} className="imprint-band" aria-hidden="true" />;
   return (

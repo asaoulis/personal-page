@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { mtFromSdr, randomSdr, radiationLobes, renderBeachball, type Mat3 } from '../../lib/mech';
+import { SCHEMES, rgba, type HeroPalette } from '../../styles/schemes';
 
 /**
  * The split-hero backdrop: cosmology | seismology, meeting at a live seismogram.
@@ -44,10 +45,6 @@ const CFG = {
   seamFrac: 0.565,
 };
 
-const COMP: [number, number, number] = [47, 168, 163];
-const DIL: [number, number, number] = [238, 241, 251];
-const INK: [number, number, number] = [10, 16, 36];
-
 type Gal = {
   x: number;
   y: number;
@@ -69,12 +66,17 @@ type Ball = {
   dying: number;
 };
 
-export default function HeroBackdrop() {
+export default function HeroBackdrop({ palette }: { palette?: HeroPalette } = {}) {
   const ref = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // scheme inks (defaults reproduce the live constants exactly)
+    const P = palette ?? SCHEMES.default;
+    const COMP = P.comp;
+    const DIL = P.dil;
+    const INK = P.ink;
     // explicit non-null types so the hoisted function declarations below keep them
     const canvas: HTMLCanvasElement = el;
     // NOT parentElement: astro-island wraps the island with display:contents
@@ -198,7 +200,8 @@ export default function HeroBackdrop() {
           s: CFG.sizeMin + rnd() * rnd() * (CFG.sizeMax - CFG.sizeMin),
           a: CFG.alphaMin + rnd() * (CFG.alphaMax - CFG.alphaMin),
           tw: rnd() * TAU,
-          col: cs < 0.9 ? 'w' : cs < 0.985 ? 't' : 'm',
+          // main / accent / rare galaxy colours (see HeroPalette galaxy* roles)
+          col: cs < 0.88 ? 'w' : cs < 0.95 ? 't' : 'm',
         });
       }
       dots = [];
@@ -391,10 +394,10 @@ export default function HeroBackdrop() {
         if (al < 0.01) continue;
         ctx.fillStyle =
           p.col === 'w'
-            ? `rgba(238,241,251,${al.toFixed(3)})`
+            ? rgba(P.galaxyMain, al)
             : p.col === 't'
-              ? `rgba(79,214,208,${al.toFixed(3)})`
-              : `rgba(255,111,156,${al.toFixed(3)})`;
+              ? rgba(P.galaxyAccent, al)
+              : rgba(P.galaxyRare, al);
         ctx.beginPath();
         ctx.ellipse(sx, sy, (p.s * mag) / sq, p.s * mag * sq, pa, 0, TAU);
         ctx.fill();
@@ -430,8 +433,7 @@ export default function HeroBackdrop() {
         const sx = p.x + ux;
         if (sx < seamX + seamValue(p.y, t) - 4) continue;
         const al = Math.min(0.8, 0.11 + br);
-        ctx.fillStyle =
-          br > 0.04 ? `rgba(79,214,208,${al.toFixed(3)})` : `rgba(238,241,251,${al.toFixed(3)})`;
+        ctx.fillStyle = br > 0.04 ? rgba(P.accent, al) : rgba(P.light, al);
         ctx.beginPath();
         ctx.arc(sx, p.y + uy, br > 0.04 ? 1.5 : 1.05, 0, TAU);
         ctx.fill();
@@ -442,8 +444,8 @@ export default function HeroBackdrop() {
       for (const ev of events) {
         const age = Math.max(0, t - ev.t0) / 1000;
         for (const [vel, base, col, lobes, lw] of [
-          [CFG.vP, 0.5, '79,214,208', ev.pl, 1.2],
-          [CFG.vS, 0.75, '238,241,251', ev.sl, 1.8],
+          [CFG.vP, 0.5, P.accent.join(','), ev.pl, 1.2],
+          [CFG.vS, 0.75, P.light.join(','), ev.sl, 1.8],
         ] as const) {
           const r = vel * age;
           const fade = ev.mag * base * Math.exp(-r / 640);
@@ -466,7 +468,7 @@ export default function HeroBackdrop() {
       }
 
       // ---- the seam: drum record + station ----
-      ctx.strokeStyle = 'rgba(79,214,208,0.35)';
+      ctx.strokeStyle = rgba(P.accent, 0.35);
       ctx.lineWidth = 1.4;
       ctx.beginPath();
       for (let y = 0; y <= H; y += 4) {
@@ -477,8 +479,8 @@ export default function HeroBackdrop() {
       ctx.stroke();
       // station glyph: the standard inverted triangle, pen at the trace
       const stx = seamX + seamValue(stationY, t);
-      ctx.fillStyle = 'rgba(238,241,251,0.92)';
-      ctx.strokeStyle = 'rgba(238,241,251,0.92)';
+      ctx.fillStyle = rgba(P.light, 0.92);
+      ctx.strokeStyle = rgba(P.light, 0.92);
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.moveTo(stx - 6.5, stationY - 5.5);
@@ -487,7 +489,7 @@ export default function HeroBackdrop() {
       ctx.closePath();
       ctx.fill();
       ctx.font = '10px "JetBrains Mono Variable", ui-monospace, monospace';
-      ctx.fillStyle = 'rgba(154,166,200,0.85)';
+      ctx.fillStyle = rgba(P.station, 0.85);
       ctx.textAlign = 'left';
       ctx.fillText('HERO · Z', stx + 12, stationY - 8);
 
@@ -575,7 +577,7 @@ export default function HeroBackdrop() {
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerdown', onDown);
     };
-  }, []);
+  }, [palette]);
 
   return <canvas ref={ref} className="hero-backdrop" aria-hidden="true" />;
 }

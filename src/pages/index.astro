@@ -5,6 +5,7 @@ import ProjectCard from '../components/ProjectCard.astro';
 import Icon from '../components/Icon.astro';
 import HeroBackdrop from '../components/hero/HeroBackdrop';
 import Imprint from '../components/imprint/Imprint';
+import { SCHEMES } from '../styles/schemes';
 import { SOCIALS } from '../config';
 import { works, references } from '../data/works';
 
@@ -17,7 +18,7 @@ const refById = new Map(references.map((r) => [r.id, r]));
        Behind it, the split backdrop: lensed galaxy-shear field | rupturing source
        solutions, meeting at a live seismogram. -->
   <section class="hero">
-    <HeroBackdrop client:load />
+    <HeroBackdrop client:load palette={SCHEMES.alt2} />
     <div class="container hero__inner">
       <div class="hero__text">
         <p class="hero__eyebrow reveal">Machine learning for science</p>
@@ -45,12 +46,10 @@ const refById = new Map(references.map((r) => [r.id, r]));
     </div>
     <div class="hero__hints" aria-hidden="true">
       <p class="hero__hint reveal" data-delay="400ms">
-        <b>move</b> — your cursor is a dark matter halo, shearing the image we receive of distant
-        galaxies
+        <b>move</b> — your cursor is a dark matter halo, shearing the image we receive of distant galaxies
       </p>
       <p class="hero__hint hero__hint--right reveal" data-delay="480ms">
-        <b>click</b> — to produce a random earthquake, whose shaking is felt at the station on the
-        seam
+        <b>click</b> — to produce a random earthquake, whose shaking is felt at the station on the seam
       </p>
     </div>
   </section>
