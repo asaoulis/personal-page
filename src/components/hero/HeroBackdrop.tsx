@@ -491,7 +491,7 @@ export default function HeroBackdrop({ palette }: { palette?: HeroPalette } = {}
       ctx.font = '10px "JetBrains Mono Variable", ui-monospace, monospace';
       ctx.fillStyle = rgba(P.station, 0.85);
       ctx.textAlign = 'left';
-      ctx.fillText('HERO · Z', stx + 12, stationY - 8);
+      ctx.fillText('SEISMOMETER', stx + 12, stationY - 8);
 
       // ---- beachballs: still lives (pop in, fade out — never drift) ----
       for (let i = balls.length - 1; i >= 0; i--) {

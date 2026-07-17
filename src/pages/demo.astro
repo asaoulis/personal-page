@@ -7,7 +7,7 @@ const pipeline = [
   {
     n: '01',
     t: 'Monitor',
-    d: 'A scheduled worker watches two public feeds: USGS for new earthquakes (within minutes) and the NIED F-net catalogue for the official reference solutions. Events outside the model’s training region, or deeper than 80 km, are skipped.',
+    d: 'A scheduled worker watches two public feeds: USGS for new earthquakes (within minutes) and the NIED F-net catalogue for the official reference solutions. Events outside the model’s training region are skipped.',
   },
   {
     n: '02',
@@ -16,13 +16,13 @@ const pipeline = [
   },
   {
     n: '03',
-    t: 'Publish',
-    d: 'The plots and a small results file are precomputed and stored. Nothing runs a model while you browse.',
+    t: 'Compare',
+    d: 'Each marker on the map above is a recent earthquake. Select one to see the model’s inferred fault mechanism alongside the official F-net catalogue solution.',
   },
   {
     n: '04',
     t: 'Explore',
-    d: 'This viewer reads the several month-long window. The time slider filters entirely in your browser, so scrubbing is instant.',
+    d: 'Drag the time slider to move through the past months of activity and browse every event the monitor has characterised.',
   },
 ];
 ---
@@ -47,7 +47,7 @@ const pipeline = [
     <div class="container">
       <header class="section-head reveal">
         <p class="eyebrow">What is this?</p>
-        <h2>Deep learning, reading earthquakes as they happen</h2>
+        <h2>Real-time earthquake characterisation</h2>
         <p class="lead">
           Each seismometer records the ground shaking as a long, noisy signal. A deep neural network
           (a CNN) reads each station’s recording, and a transformer combines the resulting
@@ -83,7 +83,7 @@ const pipeline = [
       </div>
 
       <aside class="disclaimer reveal" aria-label="Disclaimer and data sources">
-        <h2 class="disclaimer__head">A demonstration, not a catalogue</h2>
+        <h2 class="disclaimer__head">Disclaimer</h2>
         <p>
           This monitor runs automatically. Events and solutions are not manually inspected, and
           occasional poor solutions are expected, for example when data are extremely poor quality.
