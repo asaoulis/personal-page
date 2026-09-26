@@ -22,6 +22,12 @@ GITHUB_TOKEN="$(gh config get -h github.com oauth_token 2>/dev/null || gh auth t
 export GITHUB_TOKEN
 export GITHUB_REPOSITORY="asaoulis/personal-page"
 
+# Pin seismo-sbi to a fixed checkout (a git worktree at the rev CI pins as SEISMO_SBI_REV), so
+# edits in the working tree cannot break the live host. Move the pin: `git -C <worktree> checkout <sha>`.
+SEISMO_SBI_SRC="${FNET_SEISMO_SBI_SRC:-/home/alex/work/seismo-sbi-live/src}"
+[ -d "$SEISMO_SBI_SRC/seismo_sbi" ] || { echo "no seismo_sbi under $SEISMO_SBI_SRC"; exit 1; }
+export PYTHONPATH="$SEISMO_SBI_SRC${PYTHONPATH:+:$PYTHONPATH}"
+
 if [ -f "$STORE/daemon.pid" ] && kill -0 "$(cat "$STORE/daemon.pid")" 2>/dev/null; then
     echo "daemon already running (pid $(cat "$STORE/daemon.pid")) — not starting a second copy"
     exit 1

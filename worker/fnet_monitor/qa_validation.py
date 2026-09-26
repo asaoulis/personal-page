@@ -37,8 +37,8 @@ def validate_gates_model_free(backend, events, reference_cache, out_dir, *,
     Uses `thresholds` (default: SNR-only early-ckpt preset) purely to LABEL traces; the forward
     model is the F-net reference MT, so the labels reflect data quality, not model quality.
     """
-    from seismo_sbi.data_quality import (
-        TraceDescriptor, compute_trace_metrics, snr_metrics, decide_component)
+    from seismo_sbi.data_quality.metrics import TraceDescriptor, compute_trace_metrics, snr_metrics
+    from seismo_sbi.data_quality.policy import decide_component
     from .qa import read_noise_sigma, early_ckpt_thresholds
     from .inference import event_stem
 
@@ -121,7 +121,7 @@ def _plot(out_dir, rows, drate, sta_present, n_events):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    from seismo_sbi.data_quality import VERDICT_COLORS
+    from seismo_sbi.data_quality.policy import VERDICT_COLORS
 
     fig, ax = plt.subplots(1, 2, figsize=(15, 5.2))
     stas = sorted(drate, key=lambda x: -drate[x])

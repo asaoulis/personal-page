@@ -90,7 +90,7 @@ jobs:
           pip install --no-deps "git+https://github.com/asaoulis/seismo-sbi@${SEISMO_SBI_REV}"
         env:
           # The pushed public-lib-refactor commit the worker was tested against (pinned at go-live).
-          SEISMO_SBI_REV: 9e44eefeb026c7d791ec7b73bba2e4cc485f70fb
+          SEISMO_SBI_REV: 8cad422f0c6ed99af14990f6e46e053d1eff8c84
 
       - name: Put WIN32 tools on PATH
         run: |

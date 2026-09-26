@@ -94,6 +94,13 @@ Where each stage RUNS:
 - **NIED credentials**: LOCKED `worker/.env` (never read/echo it; code loads it internally) +
   GitHub repo secrets `FNET_USERNAME`/`FNET_PASSWORD`.
 - Fiducial Instaseis DB (local QA/forward): `/data/alex/axisem_dbs/japan10s/fiducial/`.
+- **Live model**: `japan_2050_tcn_v2c` (20–50 s band) with `first_ml_npe_japan_2050.yaml` —
+  the `live_event.py` defaults. The band comes from the config's `processing.filter`.
+- **seismo-sbi pin (local daemon)**: `run_local_daemon.sh` puts the git worktree
+  `/home/alex/work/seismo-sbi-live/src` first on `PYTHONPATH`, at the same rev as the workflow's
+  `SEISMO_SBI_REV`. Configs, catalogues and checkpoints still come from `/home/alex/work/seismo-sbi`.
+  To move the pin: `git -C /home/alex/work/seismo-sbi-live checkout <sha>`, bump
+  `SEISMO_SBI_REV`, then run the offline and live test tiers.
 
 ## 4. Test tiers (run before pushing worker/frontend changes)
 

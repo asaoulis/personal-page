@@ -26,8 +26,8 @@ REPO = os.environ.get("FNET_REPO", "/home/alex/work/seismo-sbi")
 STATIONS_FILE = os.environ.get(
     "FNET_STATIONS_FILE", f"{REPO}/scripts/configs/japan/fnet_demo_stations.txt")
 DEFAULT_CONFIG = os.environ.get(
-    "FNET_CONFIG", f"{REPO}/scripts/configs/japan/first_ml_npe_japan.yaml")
-DEFAULT_CKPT = os.environ.get("FNET_CKPT", f"{REPO}/ml-checkpoints/japan_v1")
+    "FNET_CONFIG", f"{REPO}/scripts/configs/japan/first_ml_npe_japan_2050.yaml")
+DEFAULT_CKPT = os.environ.get("FNET_CKPT", f"{REPO}/ml-checkpoints/japan_2050_tcn_v2c")
 
 
 def event_stem(t) -> str:
@@ -80,7 +80,7 @@ def download_event_waveforms(sol, work_dir, *, pre_s=420, post_s=960, threads=3,
     The raw mseed passes through ``process_daily_files`` →
     ``deconvolve_and_filter`` (path-b: no response removal), which applies a 1%
     cosine taper (``taper(max_percentage=0.01)``) then a CAUSAL bandpass
-    (``freqmin=0.02`` Hz / 50 s, ``freqmax=0.0667`` Hz, ``corners=4``,
+    (``freqmin=0.02`` Hz / 50 s, ``freqmax`` from the model config, ``corners=4``,
     ``zerophase=False`` — forward-only, so its start-up transient sits at the
     LEADING edge only).  On the ~1380 s window the 1% taper eats ~14 s at each
     end; the 0.02 Hz causal transient needs ~2-3 low-corner periods (~100-150 s)

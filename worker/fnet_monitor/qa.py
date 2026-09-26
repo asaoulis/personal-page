@@ -44,7 +44,7 @@ def data_qa_thresholds(level: str = "minimal", **overrides):
       ratio leaves [0.1, 5] (catches coherent gain errors like SBR Z at ~0.1x). ~1% extra
       drops on the clean population.
     """
-    from seismo_sbi.data_quality import QAThresholds
+    from seismo_sbi.data_quality.policy import QAThresholds
     kw = dict(enable_snr_gates=True, snr_dead_ratio=0.1, snr_dead_min_syn=5.0,
               snr_dead_unrecog_ratio=0.25, xcorr_dead=0.1,
               sigma_rel_max=50.0,
@@ -64,7 +64,7 @@ def early_ckpt_thresholds(**overrides):
     """DEPRECATED — use :func:`data_qa_thresholds`. Kept for compatibility; note the old
     G2 'below-noise' drop was retired in seismo_sbi.data_quality (expected-low-signal
     traces are kept), so this preset now applies the dead gate only."""
-    from seismo_sbi.data_quality import QAThresholds
+    from seismo_sbi.data_quality.policy import QAThresholds
     kw = dict(enable_snr_gates=True, snr_syn_min=2.0, snr_dead_ratio=0.1, snr_dead_min_syn=5.0,
               enable_snr_excess=False, xcorr_drop=0.0, amp_hi=1e12, amp_lo=0.0,
               enable_ppc_drops=False)
@@ -74,7 +74,7 @@ def early_ckpt_thresholds(**overrides):
 
 def mature_ckpt_thresholds(**overrides):
     """DEPRECATED — use :func:`data_qa_thresholds("full")`."""
-    from seismo_sbi.data_quality import QAThresholds
+    from seismo_sbi.data_quality.policy import QAThresholds
     kw = dict(enable_snr_gates=True, amp_hi=3.0, enable_snr_excess=True)
     kw.update(overrides)
     return QAThresholds(**kw)
@@ -186,8 +186,7 @@ class TraceQuality:
 def point_forward_provider(backend, event_h5, source_vec, present, first_guess_mt6, *,
                            max_lag=60) -> TraceQuality:
     """Default provider: ONE fiducial forward model of the median MT + classical & SNR metrics."""
-    from seismo_sbi.data_quality import (
-        TraceDescriptor, compute_trace_metrics, snr_metrics)
+    from seismo_sbi.data_quality.metrics import TraceDescriptor, compute_trace_metrics, snr_metrics
 
     obs, coords = backend.data_loader.load_event_subset(str(event_h5), present, stacked=True)
     # PIN the source location (bug fix): an unpinned forward model samples a random prior
@@ -246,8 +245,9 @@ def qa_event(backend, event_h5, source_vec, present: List[str], *,
     warning; ``"drop"`` applies all gates as usual. EITHER way the posterior of a flagged
     event is untrustworthy — the flag itself is the product; display it.
     """
-    from seismo_sbi.data_quality import (
-        component_verdicts, sigma_outlier_verdicts, event_contamination, ComponentVerdict)
+    from seismo_sbi.data_quality.policy import (
+        component_verdicts, sigma_outlier_verdicts, event_contamination, ComponentVerdict,
+    )
 
     comps = list(backend.components)
     if samples_noqa is None:

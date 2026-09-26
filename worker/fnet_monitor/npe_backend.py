@@ -42,7 +42,7 @@ def expected_trace_length(raw_cfg: dict) -> int:
     Mirrors `data_handling.preprocessing`: `compute_data_vector_length(duration, sr) + 1`
     (inclusive slice), e.g. 800 s @ 1 Hz -> 801 samples.  This is the length every station's
     trace MUST have; a station whose traces differ is a ragged-trace F-net data defect."""
-    from seismo_sbi.instaseis_simulator.utils import compute_data_vector_length
+    from seismo_sbi.utils.seismograms import compute_data_vector_length
 
     sc = (raw_cfg or {}).get("seismic_context", {}) or {}
     dur = float(sc.get("seismogram_duration", 800))
